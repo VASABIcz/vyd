@@ -2,10 +2,7 @@ package database
 
 import org.ktorm.database.Database
 import org.ktorm.dsl.*
-import org.ktorm.entity.filter
-import org.ktorm.entity.find
-import org.ktorm.entity.sequenceOf
-import org.ktorm.entity.toList
+import org.ktorm.entity.*
 
 class DatabaseFriendService(val database: Database) : FriendService {
     // TODO friend requests
@@ -17,20 +14,24 @@ class DatabaseFriendService(val database: Database) : FriendService {
     private val messages get() = database.sequenceOf(DatabaseMessages)
 
     override fun addFriend(user1: DatabaseUser, user2: DatabaseUser): Boolean {
-        val res = database.useTransaction {
-            val channel = database.insertAndGenerateKey(DatabaseChannels) {
-                set(it.type, ChannelType.friends)
-            }
+        val f = getFriendship(user1, user2)
+        return if (f == null) {
+            database.useTransaction {
+                val channel = database.insertAndGenerateKey(DatabaseChannels) {
+                    set(it.type, ChannelType.friends)
+                }
 
-            val f = database.insert(DatabaseFriends) {
-                set(it.user1, user1.id)
-                set(it.user2, user2.id)
-                set(it.channel, channel as Int)
+                val f = database.insert(DatabaseFriends) {
+                    set(it.user1, user1.id)
+                    set(it.user2, user2.id)
+                    set(it.channel, channel as Int)
+                }
+                f != 0
             }
-            f != 0
+        } else {
+            f.areFriends = true
+            f.flushChanges() != 0
         }
-
-        return res
     }
 
     override fun removeFriend(user1: DatabaseUser, user2: DatabaseUser): Boolean {
@@ -45,11 +46,11 @@ class DatabaseFriendService(val database: Database) : FriendService {
         }
     }
 
-    override fun getFriends(user: DatabaseUser): List<DatabaseFriend> {
+    override fun getFriends(user: DatabaseUser): Set<DatabaseFriend> {
         return friends.filter {
             ((it.user1 eq user.id) or (it.user2 eq user.id)) // FIXME and it.friends not sure
             // if they are not friends anymore they should still see message history but shouldn't be allowed to send message so probably dont check
-        }.toList()
+        }.toSet()
     }
 
     override fun sendMessage(sender: DatabaseUser, receiver: DatabaseUser, content: String): Boolean {
