@@ -7,7 +7,7 @@ interface FriendService {
 
     fun getFriendship(user1: DatabaseUser, user2: DatabaseUser): DatabaseFriend?
 
-    fun getFriends(user: DatabaseUser): List<DatabaseFriend>
+    fun getFriends(user: DatabaseUser): Set<DatabaseFriend>
 
     fun sendMessage(sender: DatabaseUser, receiver: DatabaseUser, content: String): Boolean
 
