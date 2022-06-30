@@ -1,15 +1,13 @@
 package database
 
+import data.responses.FriendsFriend
+import data.responses.UsersUser
 import org.ktorm.entity.Entity
 import org.ktorm.schema.*
 import java.time.Instant
 
 enum class ChannelType {
-    friends,
-    text,
-    voice,
-    group,
-    category
+    friends, text, voice, group, category
 }
 
 interface DatabaseUser : Entity<DatabaseUser> {
@@ -21,10 +19,15 @@ interface DatabaseUser : Entity<DatabaseUser> {
     val discriminator: String
     val registerDate: Instant
     val salt: ByteArray
+
+    fun toUsersUser(): UsersUser {
+        return UsersUser(id, name, discriminator)
+    }
 }
 
 interface DatabaseToken : Entity<DatabaseToken> {
     companion object : Entity.Factory<DatabaseToken>()
+
     val id: Int
     val tokenHash: ByteArray
     val user: DatabaseUser
@@ -32,6 +35,7 @@ interface DatabaseToken : Entity<DatabaseToken> {
 
 interface DatabaseUsername : Entity<DatabaseUsername> {
     companion object : Entity.Factory<DatabaseUsername>()
+
     val username: String
     val discriminator: String
 }
@@ -63,12 +67,21 @@ interface DatabaseFriend : Entity<DatabaseFriend> {
     val user2: DatabaseUser
     val channel: DatabaseChannel
     var areFriends: Boolean
+
+    fun toFriendsFriend(me: Int): FriendsFriend {
+        return FriendsFriend(
+            if (user1.id != me) user1.toUsersUser() else user2.toUsersUser(),
+            channel.id,
+            channel.timestamp.toEpochMilli(),
+            areFriends
+        )
+    }
 }
 
 object DatabaseFriends : Table<DatabaseFriend>("friends") {
     val user1 = int("user1").references(DatabaseUsers) { it.user1 }
     val user2 = int("user2").references(DatabaseUsers) { it.user2 }
-    val channel = int("channel_id").references(DatabaseChannels) { it.channel }
+    val channel = int("channel_id").primaryKey().references(DatabaseChannels) { it.channel }
     val friends = boolean("friends").bindTo { it.areFriends }
 }
 
@@ -82,7 +95,7 @@ interface DatabaseChannel : Entity<DatabaseChannel> {
 
 object DatabaseChannels : Table<DatabaseChannel>("channels") {
     val id = int("id").primaryKey().bindTo { it.id }
-    val timestamp = timestamp("timestamp"/*FIXME*/).bindTo { it.timestamp }
+    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
     val type = enum<ChannelType>("type").bindTo { it.type }
 }
 
@@ -99,7 +112,7 @@ interface DatabaseMessage : Entity<DatabaseMessage> {
 
 object DatabaseMessages : Table<DatabaseMessage>("messages") {
     val id = int("id").primaryKey().bindTo { it.id }
-    val timestamp = timestamp("timestamp"/*FIXME*/).bindTo { it.timestamp }
+    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
     val content = text("content").bindTo { it.content }
     val author = int("user_id").references(DatabaseUsers) { it.author }
     val channel = int("channel_id").references(DatabaseChannels) { it.channel }
