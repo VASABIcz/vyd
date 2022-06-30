@@ -1,8 +1,11 @@
 package database
 
 import auth.hash.SaltedHash
+import io.ktor.server.auth.jwt.*
 import org.ktorm.database.Database
-import org.ktorm.dsl.*
+import org.ktorm.dsl.and
+import org.ktorm.dsl.eq
+import org.ktorm.dsl.insert
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
@@ -12,7 +15,7 @@ class DatabaseUserService(private val database: Database, private val usernameSe
 
     override fun createUser(username: String, hash: SaltedHash): Boolean {
         val res = database.useTransaction {
-            val discriminator  = usernameService.getDiscriminator(username)
+            val discriminator = usernameService.getDiscriminator(username)
             database.insert(DatabaseUsers) {
                 set(it.name, username)
                 set(it.discriminator, discriminator!!)
@@ -48,5 +51,11 @@ class DatabaseUserService(private val database: Database, private val usernameSe
     override fun deleteUser(username: String, discriminator: String): Boolean {
         val user = getUser(username, discriminator) ?: return false
         return user.delete() != 0
+    }
+}
+
+fun JWTPrincipal.fetchUser(userService: UserService): DatabaseUser? {
+    return this.getClaim("id", Int::class)?.let {
+        userService.getUser(it)
     }
 }
