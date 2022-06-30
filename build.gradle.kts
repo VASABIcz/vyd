@@ -41,5 +41,7 @@ application {
         implementation("org.postgresql:postgresql:42.4.0")
         // logging
         implementation("ch.qos.logback:logback-classic:1.2.9")
+        // recive conten multiple times
+        implementation("io.ktor:ktor-server-double-receive:2.0.2")
     }
 }
