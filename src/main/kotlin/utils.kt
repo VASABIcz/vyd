@@ -49,7 +49,6 @@ fun base10to36(number: Int): String {
 }
 
 fun base36to10(number: String): Int {
-
     var res = 0
     val array = arrayOf(
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
