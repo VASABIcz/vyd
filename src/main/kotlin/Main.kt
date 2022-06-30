@@ -1,11 +1,16 @@
 import api.auth
+import api.configuration.configureNegotiation
+import api.configureSecurity
 import auth.hash.SHA256HashingService
 import auth.token.JwtService
 import auth.token.TokenConfig
 import database.DatabaseUserService
 import database.DatabaseUsernameService
+import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import org.ktorm.database.Database
 
 /*
@@ -76,9 +81,16 @@ fun main() {
         val config = TokenConfig(
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
             audience = "users",
-            expiresIn = 1000L*60L*60L*24L*365L,
+            expiresIn = 1000L * 60L * 60L * 24L * 365L,
             secret = System.getenv("secret")
         )
+        routing {
+            get("/") {
+                call.respond("Hello world")
+            }
+        }
         auth(userService, hashingService, tokenService, config)
+        configureSecurity(config)
+        configureNegotiation()
     }.start(wait = true)
 }
