@@ -1,6 +1,7 @@
 package database
 
 import data.responses.FriendsFriend
+import data.responses.MessagesMessage
 import data.responses.UsersUser
 import org.ktorm.entity.Entity
 import org.ktorm.schema.*
@@ -108,6 +109,9 @@ interface DatabaseMessage : Entity<DatabaseMessage> {
     val timestamp: Instant
     val channel: DatabaseChannel
 
+    fun toMessagesMessage(): MessagesMessage {
+        return MessagesMessage(id, author.toUsersUser(), content, timestamp.toEpochMilli(), channel.id)
+    }
 }
 
 object DatabaseMessages : Table<DatabaseMessage>("messages") {
