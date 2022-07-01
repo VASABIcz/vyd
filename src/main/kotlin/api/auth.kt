@@ -22,19 +22,6 @@ import io.ktor.server.routing.*
 
 fun Application.auth(userService: UserService, hashingService: HashingService, tokenService: TokenService, config: TokenConfig) {
     routing {
-        authenticate(optional = true) {
-            get("/hello") {
-                val principal = call.principal<JWTPrincipal>()
-                if (principal == null) {
-                    return@get call.respondText("unauthorized baka")
-                } else {
-                    principal.fetchUser(userService)?.name
-                    val username = principal.payload.getClaim("username").asString()
-                    val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
-                    call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
-                }
-            }
-        }
         route("/auth/") {
             post("/signup") {
                 val creds = call.receive<SignupCredentials>()
@@ -75,6 +62,19 @@ fun Application.auth(userService: UserService, hashingService: HashingService, t
                     call.respond(hashMapOf("token" to token))
                 } else {
                     return@post call.respond(HttpStatusCode.Unauthorized)
+                }
+            }
+            authenticate(optional = true) {
+                get("/test") {
+                    val principal = call.principal<JWTPrincipal>()
+                    if (principal == null) {
+                        return@get call.respondText("unauthorized baka")
+                    } else {
+                        principal.fetchUser(userService)?.name
+                        val username = principal.payload.getClaim("username").asString()
+                        val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
+                        call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
+                    }
                 }
             }
         }
