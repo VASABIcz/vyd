@@ -43,5 +43,9 @@ application {
         implementation("ch.qos.logback:logback-classic:1.2.9")
         // recive conten multiple times
         implementation("io.ktor:ktor-server-double-receive:2.0.2")
+        // CORS
+        implementation("io.ktor:ktor-server-cors:2.0.2")
+        // client call logging
+        implementation("io.ktor:ktor-server-call-logging:2.0.2")
     }
 }
