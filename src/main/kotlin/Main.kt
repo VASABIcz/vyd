@@ -1,4 +1,6 @@
 import api.auth
+import api.configuration.configureCallLogging
+import api.configuration.configureCors
 import api.configuration.configureNegotiation
 import api.configureSecurity
 import api.friends
@@ -15,67 +17,19 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
 
-/*
-me/auth/register
-    token
-
-me/auth/login
-    token
-me/auth/regenerate
-    token
-
-me/guilds/
-    id
-    avatar
-
-me/friends/
-    pepega
-
-
-user/{id}/
-    avatar
-    name
-    is me
-        avatar
-        name
-        register date
-        email
-        ...
-guild/{id}
-    name
-    avatar
-    joined
-        channels
-            id
-            name
-            type
-        members
-
-channel/{id}
-    type
-        group
-            send
-            messages
-        friend
-            send
-            messages
-        text
-            send
-            messages
-        voice
-            join
-            disconnect
-            mute
-            defen
-        ...
-    name
-
- */
-
 
 fun main() {
-    embeddedServer(Netty, port = System.getenv("port").toInt(), host = System.getenv("host")) {
-        val database = Database.connect(System.getenv("database_uri"), user = System.getenv("database_username"), password = System.getenv("database_password"))
+    embeddedServer(
+        Netty,
+        port = System.getenv("port").toInt(),
+        host = System.getenv("host"),
+        watchPaths = listOf("classes")
+    ) {
+        val database = Database.connect(
+            System.getenv("database_uri"),
+            user = System.getenv("database_username"),
+            password = System.getenv("database_password")
+        )
         val usernameService = DatabaseUsernameService(database)
         val userService = DatabaseUserService(database, usernameService)
         val hashingService = SHA256HashingService()
@@ -94,6 +48,8 @@ fun main() {
         }
         configureSecurity(config)
         configureNegotiation()
+        configureCors()
+        configureCallLogging()
         auth(userService, hashingService, tokenService, config)
         friends(userService, friendService)
     }.start(wait = true)
