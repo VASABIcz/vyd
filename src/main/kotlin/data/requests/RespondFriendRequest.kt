@@ -1,6 +1,6 @@
 package data.requests
 
-import database.FriendRequestState
+import database.FriendRequestResponse
 
 @kotlinx.serialization.Serializable
-data class RespondFriendRequest(val id: Int, val response: FriendRequestState)
+data class RespondFriendRequest(val id: Int, val response: FriendRequestResponse)
