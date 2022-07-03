@@ -35,11 +35,16 @@ fun Application.auth(userService: UserService, hashingService: HashingService, t
             }
             post("/signin") {
                 var signinId: SigninUserId? = null
+                var signinName: SigninUsername? = null
                 try {
                     signinId = call.receiveOrNull<SigninUserId>()
                 } catch (_: Throwable) {
                 }
-                val signinName = call.receiveOrNull<SigninUsername>()
+                try {
+                    signinName = call.receiveOrNull<SigninUsername>()
+                } catch (_: Throwable) {
+
+                }
 
                 val user = if (signinName != null) {
                     userService.getUser(signinName.username, signinName.discriminator)
