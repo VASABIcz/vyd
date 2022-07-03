@@ -12,6 +12,7 @@ fun Application.configureNegotiation() {
     install(ContentNegotiation) {
         json(Json {
             prettyPrint = true
+            ignoreUnknownKeys = true
         })
     }
 }
