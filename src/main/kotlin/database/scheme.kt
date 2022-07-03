@@ -141,9 +141,22 @@ object DatabaseUsersAvatars : Table<UsersAvatar>("users_avatars") {
  */
 @kotlinx.serialization.Serializable
 enum class FriendRequestState {
-    accpeted,
+    accepted,
     pending,
     canceled
+}
+
+@kotlinx.serialization.Serializable
+enum class FriendRequestResponse {
+    accept,
+    decline
+}
+
+fun FriendRequestResponse.toFriendRequestState(): FriendRequestState {
+    return when (this) {
+        FriendRequestResponse.accept -> FriendRequestState.accepted
+        FriendRequestResponse.decline -> FriendRequestState.canceled
+    }
 }
 
 interface DatabaseFriendRequest : Entity<DatabaseFriendRequest> {
