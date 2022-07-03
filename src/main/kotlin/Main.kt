@@ -1,12 +1,14 @@
 import api.auth
 import api.configuration.configureCallLogging
 import api.configuration.configureCors
+import api.configuration.configureMetrics
 import api.configuration.configureNegotiation
 import api.configureSecurity
 import api.friends
 import auth.hash.SHA256HashingService
 import auth.token.JwtService
 import auth.token.TokenConfig
+import database.DatabaseFriendRequestService
 import database.DatabaseFriendService
 import database.DatabaseUserService
 import database.DatabaseUsernameService
@@ -35,6 +37,7 @@ fun main() {
         val hashingService = SHA256HashingService()
         val tokenService = JwtService()
         val friendService = DatabaseFriendService(database)
+        val friendRequestService = DatabaseFriendRequestService(database)
         val config = TokenConfig(
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
             audience = "users",
@@ -50,7 +53,9 @@ fun main() {
         configureNegotiation()
         configureCors()
         configureCallLogging()
+        configureMetrics()
+
         auth(userService, hashingService, tokenService, config)
-        friends(userService, friendService)
+        friends(userService, friendService, friendRequestService)
     }.start(wait = true)
 }
