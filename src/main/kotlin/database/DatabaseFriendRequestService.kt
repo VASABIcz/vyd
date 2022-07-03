@@ -73,13 +73,20 @@ class DatabaseFriendRequestService(private val database: Database, private val f
 
         return if (request.state == FriendRequestState.pending && request.receiver == receiver) {
             request.state = state
-            if (request.flushChanges() != 0) {
-                if (state == FriendRequestState.accepted) {
-                    friendService.addFriend(request.requester, receiver)
-                } else {
+            return try {
+                database.useTransaction {
+                    if (request.flushChanges() == 0) {
+                        throw Throwable("failed to update state")
+                    }
+                    if (state == FriendRequestState.accepted) {
+                        friendService.addFriend(request.requester, receiver)
+                    } else {
+                        throw Throwable("failed to add friend")
+                    }
                     true
                 }
-            } else {
+            } catch (t: Throwable) {
+                t.printStackTrace()
                 false
             }
         } else {
