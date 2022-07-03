@@ -13,7 +13,7 @@ fun Application.configureCallLogging() {
             val httpMethod = call.request.httpMethod.value
             val userAgent = call.request.headers["User-Agent"]
             val user = call.authentication.principal<JWTPrincipal>()?.getClaim("id", String::class)
-            "Status: $status, HTTP method: $httpMethod, User agent: $userAgent, user : $user"
+            "Status: $status, HTTP method: $httpMethod, Path: ${call.request.path()}, User agent: $userAgent, user : $user"
         }
     }
 }
