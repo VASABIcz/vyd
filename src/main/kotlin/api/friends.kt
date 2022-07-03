@@ -8,10 +8,7 @@ import Responses.Companion.success
 import data.requests.CreateFriendRequest
 import data.requests.MessagePayload
 import data.requests.RespondFriendRequest
-import database.FriendRequestService
-import database.FriendService
-import database.UserService
-import database.fetchUser
+import database.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -124,48 +121,46 @@ fun Application.friends(
                             it.toMessagesMessage()
                         })
                     }
-                    /*
-                    create request
-                    reject request
-                    accept request
-                    show pending requests
-                     */
-                    route("requests") {
-                        put { // accept/decline request
-                            val response = call.receive<RespondFriendRequest>()
+                }
+            }
+            route("friendrequests") {
+                put { // accept/decline request
+                    val response = call.receive<RespondFriendRequest>()
 
-                            val principal = call.principal<JWTPrincipal>()
-                            val me = principal!!.fetchUser(userService)!!
+                    val principal = call.principal<JWTPrincipal>()
+                    val me = principal!!.fetchUser(userService)!!
 
-                            if (friendRequestService.changePendingRequestState(response.id, response.response, me)) {
-                                call.success()
-                            } else {
-                                call.serverIssue()
-                            }
-                        }
-                        post { // create request
-                            val response = call.receive<CreateFriendRequest>()
-                            val principal = call.principal<JWTPrincipal>()
-                            val me = principal!!.fetchUser(userService)!!
-
-                            if (friendRequestService.createRequest(me, userService.getUser(response.receiver)!!)) {
-                                call.success()
-                            } else {
-                                call.serverIssue()
-                            }
-                        }
-                        get { // pending requests
-                            val principal = call.principal<JWTPrincipal>()
-                            val me = principal!!.fetchUser(userService)!!
-
-                            call.respond(
-                                friendRequestService.getPendingRequests(me).map {
-                                    it.toFriendRequestsRequest()
-                                }
-                            )
-                        }
+                    if (friendRequestService.changePendingRequestState(
+                            response.id,
+                            response.response.toFriendRequestState(),
+                            me
+                        )
+                    ) {
+                        call.success()
+                    } else {
+                        call.serverIssue()
                     }
+                }
+                post { // create request
+                    val response = call.receive<CreateFriendRequest>()
+                    val principal = call.principal<JWTPrincipal>()
+                    val me = principal!!.fetchUser(userService)!!
 
+                    if (friendRequestService.createRequest(me, userService.getUser(response.receiver)!!)) {
+                        call.success()
+                    } else {
+                        call.serverIssue()
+                    }
+                }
+                get { // pending requests
+                    val principal = call.principal<JWTPrincipal>()
+                    val me = principal!!.fetchUser(userService)!!
+
+                    call.respond(
+                        friendRequestService.getPendingRequests(me).map {
+                            it.toFriendRequestsRequest()
+                        }.toList()
+                    )
                 }
             }
         }
