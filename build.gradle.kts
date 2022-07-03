@@ -47,5 +47,8 @@ application {
         implementation("io.ktor:ktor-server-cors:2.0.2")
         // client call logging
         implementation("io.ktor:ktor-server-call-logging:2.0.2")
+        // metrics
+        implementation("io.ktor:ktor-server-metrics-micrometer:2.0.2")
+        implementation("io.micrometer:micrometer-registry-prometheus:1.8.6")
     }
 }
