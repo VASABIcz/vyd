@@ -37,7 +37,7 @@ fun main() {
         val hashingService = SHA256HashingService()
         val tokenService = JwtService()
         val friendService = DatabaseFriendService(database)
-        val friendRequestService = DatabaseFriendRequestService(database)
+        val friendRequestService = DatabaseFriendRequestService(database, friendService)
         val config = TokenConfig(
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
             audience = "users",
