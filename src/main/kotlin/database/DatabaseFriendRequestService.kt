@@ -1,6 +1,5 @@
 package database
 
-import database.DatabaseMessages.id
 import org.ktorm.database.Database
 import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
@@ -11,12 +10,21 @@ import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 
-class DatabaseFriendRequestService(private val database: Database) : FriendRequestService {
+class DatabaseFriendRequestService(private val database: Database, private val friendService: FriendService) :
+    FriendRequestService {
     private val requests get() = database.sequenceOf(DatabaseFriendRequests)
 
     override fun createRequest(requester: DatabaseUser, receiver: DatabaseUser): Boolean {
+        val friendship = friendService.getFriendship(requester, receiver)
+
+        if (friendship != null) {
+            if (friendship.areFriends) {
+                return false
+            }
+        }
+
         val request = getRequestState(requester, receiver)
-        return if (request?.state == FriendRequestState.accpeted || request?.state == FriendRequestState.canceled || request == null) {
+        return if (request?.state == FriendRequestState.accepted || request?.state == FriendRequestState.canceled || request == null) {
             database.insert(DatabaseFriendRequests) {
                 set(it.requester, requester.id)
                 set(it.receiver, receiver.id)
@@ -42,31 +50,38 @@ class DatabaseFriendRequestService(private val database: Database) : FriendReque
         }
     }
 
-    override fun deletePendingRequest(requester: DatabaseUser, receiver: DatabaseUser): Boolean {
-        return (requests.find { it.id eq id } ?: return false).delete() != 0
-    }
+    // override fun deletePendingRequest(requester: DatabaseUser, receiver: DatabaseUser): Boolean {
+    //     return (requests.find { it.id eq id } ?: return false).delete() != 0
+    // }
 
-    override fun changePendingRequestState(
-        requester: DatabaseUser,
-        receiver: DatabaseUser,
-        state: FriendRequestState
-    ): Boolean {
-        val request = getRequestState(requester, receiver) ?: return false
-
-        return if (request.state == FriendRequestState.pending) {
-            request.state = state
-            request.flushChanges() != 0
-        } else {
-            false
-        }
-    }
+    // override fun changePendingRequestState(
+    //     requester: DatabaseUser,
+    //     receiver: DatabaseUser,
+    //     state: FriendRequestState
+    // ): Boolean {
+    //     val request = getRequestState(requester, receiver) ?: return false
+    //     return if (request.state == FriendRequestState.pending) {
+    //         request.state = state
+    //         request.flushChanges() != 0
+    //     } else {
+    //         false
+    //     }
+    // }
 
     override fun changePendingRequestState(id: Int, state: FriendRequestState, receiver: DatabaseUser): Boolean {
         val request = getRequestState(id) ?: return false
 
         return if (request.state == FriendRequestState.pending && request.receiver == receiver) {
             request.state = state
-            request.flushChanges() != 0
+            if (request.flushChanges() != 0) {
+                if (state == FriendRequestState.accepted) {
+                    friendService.addFriend(request.requester, receiver)
+                } else {
+                    true
+                }
+            } else {
+                false
+            }
         } else {
             false
         }
