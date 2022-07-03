@@ -1,5 +1,6 @@
 package database
 
+import data.responses.FriendRequestsRequest
 import data.responses.FriendsFriend
 import data.responses.MessagesMessage
 import data.responses.UsersUser
@@ -120,4 +121,49 @@ object DatabaseMessages : Table<DatabaseMessage>("messages") {
     val content = text("content").bindTo { it.content }
     val author = int("user_id").references(DatabaseUsers) { it.author }
     val channel = int("channel_id").references(DatabaseChannels) { it.channel }
+}
+
+/*
+
+interface UsersAvatar: Entity<UsersAvatar> {
+    companion object : Entity.Factory<UsersAvatar>()
+
+    val user: DatabaseUser
+    val avatar: ByteArray
+    val timestamp: Instant
+}
+object DatabaseUsersAvatars : Table<UsersAvatar>("users_avatars") {
+    val id = int("id").primaryKey().references(DatabaseUsers) {it.user}
+    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val content = bytes("avatar").bindTo { it.avatar }
+}
+
+ */
+@kotlinx.serialization.Serializable
+enum class FriendRequestState {
+    accpeted,
+    pending,
+    canceled
+}
+
+interface DatabaseFriendRequest : Entity<DatabaseFriendRequest> {
+    companion object : Entity.Factory<DatabaseFriendRequest>()
+
+    val id: Int
+    val requester: DatabaseUser
+    val receiver: DatabaseUser
+    var state: FriendRequestState
+    val timestamp: Instant
+
+    fun toFriendRequestsRequest(): FriendRequestsRequest {
+        return FriendRequestsRequest(id, requester.toUsersUser(), timestamp.toEpochMilli())
+    }
+}
+
+object DatabaseFriendRequests : Table<DatabaseFriendRequest>("friend_requests") {
+    val id = int("id").primaryKey().bindTo { it.id }
+    val requester = int("requester").references(DatabaseUsers) { it.requester }
+    val receiver = int("receiver").references(DatabaseUsers) { it.receiver }
+    val state = enum<FriendRequestState>("state").bindTo { it.state }
+    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
 }
