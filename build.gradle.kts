@@ -50,5 +50,10 @@ application {
         // metrics
         implementation("io.ktor:ktor-server-metrics-micrometer:2.0.2")
         implementation("io.micrometer:micrometer-registry-prometheus:1.8.6")
+        // rabbit mq
+        // implementation("com.viartemev:the-white-rabbit:0.0.6")
+        implementation("com.rabbitmq:amqp-client:5.15.0")
+        // redis
+        implementation("io.github.crackthecodeabhi:kreds:0.7")
     }
 }
