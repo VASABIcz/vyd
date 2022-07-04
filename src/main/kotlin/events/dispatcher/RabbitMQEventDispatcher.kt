@@ -40,6 +40,6 @@ class RabbitMQEventDispatcher(uri: String, private val queue: String) : EventDis
 }
 
 fun main() = runBlocking {
-    val q = RabbitMQEventDispatcher("amqp://guest:guest@192.168.0.101:15672", "")
+    val q = RabbitMQEventDispatcher("", "")
     q.dispatch("baka UwU")
 }
