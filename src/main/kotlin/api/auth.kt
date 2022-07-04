@@ -24,6 +24,7 @@ fun Application.auth(userService: UserService, hashingService: HashingService, t
     routing {
         route("/auth/") {
             post("/signup") {
+                // todo signup will also gen token
                 val creds = call.receive<SignupCredentials>()
 
                 val hash = hashingService.generateSaltedHash(creds.password)

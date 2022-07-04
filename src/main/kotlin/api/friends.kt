@@ -142,7 +142,7 @@ fun Application.friends(
                     }
                 }
                 post { // create request
-                    val response = call.receive<CreateFriendRequest>()
+                    val response = call.receive<CreateFriendRequest>() // TODO accept username
                     val principal = call.principal<JWTPrincipal>()
                     val me = principal!!.fetchUser(userService)!!
 

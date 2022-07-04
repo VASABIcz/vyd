@@ -5,11 +5,6 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
 class DatabaseFriendService(val database: Database) : FriendService {
-    // TODO friend requests
-    // user1 accepted
-    // user2 accepted
-    // or create friend_settings table and assume friends false by default
-
     private val friends get() = database.sequenceOf(DatabaseFriends)
     private val messages get() = database.sequenceOf(DatabaseMessages)
 
