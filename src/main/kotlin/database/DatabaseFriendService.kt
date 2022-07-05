@@ -43,7 +43,7 @@ class DatabaseFriendService(val database: Database) : FriendService {
 
     override fun getFriends(user: DatabaseUser): Set<DatabaseFriend> {
         return friends.filter {
-            ((it.user1 eq user.id) or (it.user2 eq user.id)) // FIXME and it.friends not sure
+            ((it.user1 eq user.id) or (it.user2 eq user.id)) and it.friends eq true  // FIXME and it.friends not sure
             // if they are not friends anymore they should still see message history but shouldn't be allowed to send message so probably dont check
         }.toSet()
     }
