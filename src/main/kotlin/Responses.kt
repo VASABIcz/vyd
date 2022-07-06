@@ -39,5 +39,9 @@ class Responses {
         suspend fun ApplicationCall.serverIssue() {
             this.respond(HttpStatusCode(500, "server failure"))
         }
+
+        suspend fun ApplicationCall.notFound() {
+            this.respond(HttpStatusCode(404, "not found"))
+        }
     }
 }
