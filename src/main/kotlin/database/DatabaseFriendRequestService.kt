@@ -24,7 +24,7 @@ class DatabaseFriendRequestService(private val database: Database, private val f
         }
 
         val request = getRequestState(requester, receiver)
-        return if (request?.state == FriendRequestState.accepted || request?.state == FriendRequestState.canceled || request == null) {
+        return if (request?.state == FriendRequestState.accepted || request?.state == FriendRequestState.declined || request == null) {
             database.insert(DatabaseFriendRequests) {
                 set(it.requester, requester.id)
                 set(it.receiver, receiver.id)
@@ -71,7 +71,7 @@ class DatabaseFriendRequestService(private val database: Database, private val f
     override fun changePendingRequestState(id: Int, state: FriendRequestState, receiver: DatabaseUser): Boolean {
         val request = getRequestState(id) ?: return false
 
-        return if (request.state == FriendRequestState.pending && request.receiver == receiver) {
+        return if (request.state == FriendRequestState.pending && request.receiver.id == receiver.id) {
             request.state = state
             return try {
                 database.useTransaction {
@@ -80,8 +80,6 @@ class DatabaseFriendRequestService(private val database: Database, private val f
                     }
                     if (state == FriendRequestState.accepted) {
                         friendService.addFriend(request.requester, receiver)
-                    } else {
-                        throw Throwable("failed to add friend")
                     }
                     true
                 }
