@@ -5,7 +5,7 @@ import io.ktor.server.auth.jwt.*
 import org.ktorm.database.Database
 import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
-import org.ktorm.dsl.insert
+import org.ktorm.dsl.insertAndGenerateKey
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
@@ -13,10 +13,10 @@ import java.time.Instant
 class DatabaseUserService(private val database: Database, private val usernameService: UsernameService): UserService {
     private val users get() = database.sequenceOf(DatabaseUsers)
 
-    override fun createUser(username: String, hash: SaltedHash): Boolean {
+    override fun createUser(username: String, hash: SaltedHash): DatabaseUser? {
         val res = database.useTransaction {
             val discriminator = usernameService.getDiscriminator(username)
-            database.insert(DatabaseUsers) {
+            val id = database.insertAndGenerateKey(DatabaseUsers) {
                 set(it.name, username)
                 set(it.discriminator, discriminator!!)
                 set(it.registerDate, Instant.now())
@@ -26,9 +26,9 @@ class DatabaseUserService(private val database: Database, private val usernameSe
             if (usernameService.incrementDiscriminator(username)) {
                 throw Throwable("failed to increment discriminator")
             }
-            true
+            id
         }
-        return res
+        return getUser(res as Int)
     }
 
     override fun getUser(username: String, discriminator: String): DatabaseUser? {
