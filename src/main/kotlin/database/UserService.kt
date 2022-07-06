@@ -3,7 +3,7 @@ package database
 import auth.hash.SaltedHash
 
 interface UserService {
-    fun createUser(username: String, hash: SaltedHash): Boolean
+    fun createUser(username: String, hash: SaltedHash): DatabaseUser?
 
     fun getUser(username: String, discriminator: String): DatabaseUser?
 
