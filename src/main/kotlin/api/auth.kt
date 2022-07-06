@@ -1,7 +1,6 @@
 package api
 
 import Responses.Companion.serverIssue
-import Responses.Companion.success
 import auth.hash.HashingService
 import auth.hash.SaltedHash
 import auth.token.TokenClaim
@@ -28,8 +27,9 @@ fun Application.auth(userService: UserService, hashingService: HashingService, t
                 val creds = call.receive<SignupCredentials>()
 
                 val hash = hashingService.generateSaltedHash(creds.password)
-                if (userService.createUser(creds.username, hash)) {
-                    return@post call.success()
+                val usr = userService.createUser(creds.username, hash)
+                if (usr != null) {
+                    return@post call.respond(usr.toUsersUser())
                 } else {
                     return@post call.serverIssue()
                 }
