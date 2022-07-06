@@ -5,6 +5,7 @@ import api.configuration.configureMetrics
 import api.configuration.configureNegotiation
 import api.configureSecurity
 import api.friends
+import api.users
 import auth.hash.SHA256HashingService
 import auth.token.JwtService
 import auth.token.TokenConfig
@@ -57,5 +58,6 @@ fun main() {
 
         auth(userService, hashingService, tokenService, config)
         friends(userService, friendService, friendRequestService)
+        users(userService)
     }.start(wait = true)
 }
