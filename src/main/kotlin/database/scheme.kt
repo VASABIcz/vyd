@@ -143,7 +143,7 @@ object DatabaseUsersAvatars : Table<UsersAvatar>("users_avatars") {
 enum class FriendRequestState {
     accepted,
     pending,
-    canceled
+    declined
 }
 
 @kotlinx.serialization.Serializable
@@ -155,7 +155,7 @@ enum class FriendRequestResponse {
 fun FriendRequestResponse.toFriendRequestState(): FriendRequestState {
     return when (this) {
         FriendRequestResponse.accept -> FriendRequestState.accepted
-        FriendRequestResponse.decline -> FriendRequestState.canceled
+        FriendRequestResponse.decline -> FriendRequestState.declined
     }
 }
 
