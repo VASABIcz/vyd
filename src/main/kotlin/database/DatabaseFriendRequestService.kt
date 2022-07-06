@@ -15,6 +15,9 @@ class DatabaseFriendRequestService(private val database: Database, private val f
     private val requests get() = database.sequenceOf(DatabaseFriendRequests)
 
     override fun createRequest(requester: DatabaseUser, receiver: DatabaseUser): Boolean {
+        if (receiver.id == requester.id) {
+            false
+        }
         val friendship = friendService.getFriendship(requester, receiver)
 
         if (friendship != null) {
