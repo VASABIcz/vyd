@@ -2,15 +2,13 @@ package api
 
 import Responses.Companion.serverIssue
 import auth.hash.HashingService
-import auth.hash.SaltedHash
-import auth.token.TokenClaim
 import auth.token.TokenConfig
 import auth.token.TokenService
 import data.requests.SigninUserId
 import data.requests.SigninUsername
 import data.requests.SignupCredentials
-import database.UserService
-import database.fetchUser
+import database.servicies.users.UserService
+import database.servicies.users.fetchUser
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -18,56 +16,52 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import wrapers.HashWrapper
+import wrapers.UserWrapper
 
-fun Application.auth(userService: UserService, hashingService: HashingService, tokenService: TokenService, config: TokenConfig) {
+fun Application.auth(
+    userService: UserService,
+    hashingService: HashingService,
+    tokenService: TokenService,
+    config: TokenConfig,
+    userWrapper: UserWrapper,
+    hashWrapper: HashWrapper
+) {
     routing {
         route("/auth/") {
             post("/signup") {
-                // todo signup will also gen token
+                // todo signup will also gen token, maybe returning user is enough c:
                 val creds = call.receive<SignupCredentials>()
 
-                val hash = hashingService.generateSaltedHash(creds.password)
-                val usr = userService.createUser(creds.username, hash)
-                if (usr != null) {
-                    return@post call.respond(usr.toUsersUser())
-                } else {
-                    return@post call.serverIssue()
-                }
+                val id = userWrapper.createUser(creds.username, creds.password) ?: return@post call.serverIssue()
+                val usr = userService.getUser(id) ?: return@post call.serverIssue()
+
+                call.respond(usr.toUsersUser())
             }
             post("/signin") {
                 var signinId: SigninUserId? = null
                 var signinName: SigninUsername? = null
                 try {
-                    signinId = call.receiveOrNull<SigninUserId>()
+                    signinId = call.receiveOrNull()
                 } catch (_: Throwable) {
                 }
                 try {
-                    signinName = call.receiveOrNull<SigninUsername>()
+                    signinName = call.receiveOrNull()
                 } catch (_: Throwable) {
 
                 }
-
-                val user = if (signinName != null) {
-                    userService.getUser(signinName.username, signinName.discriminator)
+                val hash = if (signinName != null) {
+                    hashWrapper.createToken(signinName.username, signinName.discriminator, signinName.password)
                 } else if (signinId != null) {
-                    userService.getUser(signinId.id)
+                    hashWrapper.createToken(signinId.id, signinId.password)
                 } else {
                     return@post call.respond(HttpStatusCode.BadRequest)
                 }
 
-                if (user == null) {
+                if (hash == null) {
                     return@post call.serverIssue()
-                }
-
-                val password = signinName?.password
-                    ?: (signinId?.password ?: return@post call.respond(HttpStatusCode.BadRequest))
-
-                val hash = SaltedHash(user.hash.decodeToString(), user.salt.decodeToString())
-                if (hashingService.verify(password, hash)) {
-                    val token = tokenService.generate(config, TokenClaim("id", user.id.toString()))
-                    call.respond(hashMapOf("token" to token))
                 } else {
-                    return@post call.respond(HttpStatusCode.Unauthorized)
+                    return@post call.respond(mapOf("hash" to hash))
                 }
             }
             authenticate(optional = true) {

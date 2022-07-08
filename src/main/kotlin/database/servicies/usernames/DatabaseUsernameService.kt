@@ -1,4 +1,4 @@
-package database
+package database.servicies.usernames
 
 import base10to36
 import base36to10
@@ -12,17 +12,14 @@ import org.ktorm.entity.sequenceOf
 
 class DatabaseUsernameService(private val database: Database): UsernameService {
     private val usernames get() = database.sequenceOf(DatabaseUsernames)
-
-    // 36
-    // 36 36 36 36
     override fun getDiscriminator(username: String): String? {
         val n = usernames.find {
-            (it.username eq username)
+            (DatabaseUsernames.username eq username)
         }
         return n?.discriminator
             ?: if (database.insert(DatabaseUsernames) {
-                    set(it.username, username)
-                    set(it.discriminator, "0")
+                    set(DatabaseUsernames.username, username)
+                    set(DatabaseUsernames.discriminator, "0")
                 } == 0) {
                 null
             } else {
@@ -32,12 +29,12 @@ class DatabaseUsernameService(private val database: Database): UsernameService {
 
     override fun incrementDiscriminator(username: String): Boolean {
         val n = usernames.find {
-            (it.username eq username)
+            (DatabaseUsernames.username eq username)
         } ?: return false
         return database.update(DatabaseUsernames) {
-            set(it.discriminator, base10to36(base36to10(n.discriminator)+1))
+            set(DatabaseUsernames.discriminator, base10to36(base36to10(n.discriminator) + 1))
             where {
-                it.username eq username
+                DatabaseUsernames.username eq username
             }
         } == 0
     }

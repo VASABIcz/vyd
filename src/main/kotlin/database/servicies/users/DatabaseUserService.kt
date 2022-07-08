@@ -1,4 +1,4 @@
-package database
+package database.servicies.users
 
 import auth.hash.SaltedHash
 import io.ktor.server.auth.jwt.*
@@ -8,27 +8,17 @@ import org.ktorm.dsl.eq
 import org.ktorm.dsl.insertAndGenerateKey
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
-import java.time.Instant
 
-class DatabaseUserService(private val database: Database, private val usernameService: UsernameService): UserService {
+class DatabaseUserService(private val database: Database) : UserService {
     private val users get() = database.sequenceOf(DatabaseUsers)
 
-    override fun createUser(username: String, hash: SaltedHash): DatabaseUser? {
-        val res = database.useTransaction {
-            val discriminator = usernameService.getDiscriminator(username)
-            val id = database.insertAndGenerateKey(DatabaseUsers) {
-                set(it.name, username)
-                set(it.discriminator, discriminator!!)
-                set(it.registerDate, Instant.now())
-                set(it.hash, hash.hash.toByteArray())
-                set(it.salt, hash.salt.toByteArray())
-            }
-            if (usernameService.incrementDiscriminator(username)) {
-                throw Throwable("failed to increment discriminator")
-            }
-            id
-        }
-        return getUser(res as Int)
+    override fun createUser(username: String, hash: SaltedHash, discriminator: String): Int? {
+        return database.insertAndGenerateKey(DatabaseUsers) {
+            set(DatabaseUsers.name, username)
+            set(DatabaseUsers.discriminator, discriminator)
+            set(DatabaseUsers.hash, hash.hash.toByteArray())
+            set(DatabaseUsers.salt, hash.salt.toByteArray())
+        } as Int?
     }
 
     override fun getUser(username: String, discriminator: String): DatabaseUser? {

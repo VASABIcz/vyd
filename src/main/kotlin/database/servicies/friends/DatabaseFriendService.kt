@@ -1,5 +1,9 @@
-package database
+package database.servicies.friends
 
+import database.servicies.channels.ChannelType
+import database.servicies.channels.DatabaseChannels
+import database.servicies.messages.DatabaseMessage
+import database.servicies.messages.DatabaseMessages
 import org.ktorm.database.Database
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
@@ -8,18 +12,18 @@ class DatabaseFriendService(val database: Database) : FriendService {
     private val friends get() = database.sequenceOf(DatabaseFriends)
     private val messages get() = database.sequenceOf(DatabaseMessages)
 
-    override fun addFriend(user1: DatabaseUser, user2: DatabaseUser): Boolean {
+    override fun addFriend(user1: Int, user2: Int): Boolean {
         val f = getFriendship(user1, user2)
         return if (f == null) {
             database.useTransaction {
                 val channel = database.insertAndGenerateKey(DatabaseChannels) {
-                    set(it.type, ChannelType.friends)
+                    set(DatabaseChannels.type, ChannelType.friends)
                 }
 
                 val f = database.insert(DatabaseFriends) {
-                    set(it.user1, user1.id)
-                    set(it.user2, user2.id)
-                    set(it.channel, channel as Int)
+                    set(DatabaseFriends.user1, user1)
+                    set(DatabaseFriends.user2, user2)
+                    set(DatabaseFriends.channel, channel as Int)
                 }
                 f != 0
             }
@@ -29,43 +33,43 @@ class DatabaseFriendService(val database: Database) : FriendService {
         }
     }
 
-    override fun removeFriend(user1: DatabaseUser, user2: DatabaseUser): Boolean {
+    override fun removeFriend(user1: Int, user2: Int): Boolean {
         val x = getFriendship(user1, user2) ?: return false
         x.areFriends = false
         return x.flushChanges() != 0
     }
 
-    override fun getFriendship(user1: DatabaseUser, user2: DatabaseUser): DatabaseFriend? {
+    override fun getFriendship(user1: Int, user2: Int): DatabaseFriend? {
         return friends.find {
-            ((it.user1 eq user1.id) or (it.user1 eq user2.id)) and ((it.user2 eq user1.id) or (it.user2 eq user2.id))
+            ((DatabaseFriends.user1 eq user1) or (DatabaseFriends.user1 eq user2)) and ((DatabaseFriends.user2 eq user1) or (DatabaseFriends.user2 eq user2))
         }
     }
 
-    override fun getFriends(user: DatabaseUser): Set<DatabaseFriend> {
+    override fun getFriends(user: Int): Set<DatabaseFriend> {
         return friends.filter {
-            ((it.user1 eq user.id) or (it.user2 eq user.id)) and it.friends eq true  // FIXME and it.friends not sure
+            ((DatabaseFriends.user1 eq user) or (DatabaseFriends.user2 eq user)) and DatabaseFriends.friends eq true  // FIXME and it.friends not sure
             // if they are not friends anymore they should still see message history but shouldn't be allowed to send message so probably dont check
         }.toSet()
     }
 
-    override fun sendMessage(sender: DatabaseUser, receiver: DatabaseUser, content: String): Boolean {
+    override fun sendMessage(sender: Int, receiver: Int, content: String): Boolean {
         val f = getFriendship(sender, receiver) ?: return false
         if (!f.areFriends) { // FIXME not sure if it should be handled here
             return false
         }
 
         val m = database.insert(DatabaseMessages) {
-            set(it.author, sender.id)
-            set(it.channel, f.channel.id)
-            set(it.content, content)
+            set(DatabaseMessages.author, sender)
+            set(DatabaseMessages.channel, f.channel.id)
+            set(DatabaseMessages.content, content)
         }
 
         return m != 0
     }
 
     override fun getMessages(
-        user1: DatabaseUser,
-        user2: DatabaseUser,
+        user1: Int,
+        user2: Int,
         amount: Int,
         offset: Int
     ): List<DatabaseMessage>? {
@@ -83,7 +87,7 @@ class DatabaseFriendService(val database: Database) : FriendService {
 
          */
         return messages.filter {
-            it.channel eq f.channel.id
+            DatabaseMessages.channel eq f.channel.id
         }.toList()
     }
 }

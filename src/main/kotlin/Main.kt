@@ -9,10 +9,10 @@ import api.users
 import auth.hash.SHA256HashingService
 import auth.token.JwtService
 import auth.token.TokenConfig
-import database.DatabaseFriendRequestService
-import database.DatabaseFriendService
-import database.DatabaseUserService
-import database.DatabaseUsernameService
+import database.servicies.friendRequests.DatabaseFriendRequestService
+import database.servicies.friends.DatabaseFriendService
+import database.servicies.usernames.DatabaseUsernameService
+import database.servicies.users.DatabaseUserService
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*

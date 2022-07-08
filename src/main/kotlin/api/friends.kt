@@ -5,15 +5,13 @@ import Parameters
 import Responses.Companion.badRequest
 import Responses.Companion.serverIssue
 import Responses.Companion.success
-import data.requests.CreateFriendRequest
-import data.requests.MessagePayload
-import data.requests.RespondFriendRequest
-import database.*
-import io.ktor.http.*
+import database.servicies.friendRequests.FriendRequestService
+import database.servicies.friends.FriendService
+import database.servicies.users.UserService
+import database.servicies.users.fetchUser
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -29,7 +27,7 @@ fun Application.friends(
                     val principal = call.principal<JWTPrincipal>()
                     val me = principal!!.fetchUser(userService)!!
 
-                    val f = friendService.getFriends(me)
+                    val f = friendService.getFriends(me.id)
                     return@get call.respond(f.map { it.toFriendsFriend(me.id) })
                 }
                 route("{friend}") {
@@ -43,8 +41,7 @@ fun Application.friends(
                         val principal = call.principal<JWTPrincipal>()
                         val me = principal!!.fetchUser(userService)!!
 
-                        val friend = userService.getUser(friendId!!)
-                        val f = friendService.getFriendship(me, friend!!)
+                        val f = friendService.getFriendship(me.id, friendId!!)
                         return@get call.respond(f!!.toFriendsFriend(me.id))
                     }
                     delete {
@@ -57,9 +54,7 @@ fun Application.friends(
                         val principal = call.principal<JWTPrincipal>()
                         val me = principal!!.fetchUser(userService)!!
 
-                        val friend = userService.getUser(friendId!!)
-
-                        if (friendService.removeFriend(me, friend!!)) {
+                        if (friendService.removeFriend(me.id, friendId!!)) {
                             return@delete call.success()
                         } else {
                             return@delete call.serverIssue()
@@ -75,92 +70,12 @@ fun Application.friends(
                         val principal = call.principal<JWTPrincipal>()
                         val me = principal!!.fetchUser(userService)!!
 
-                        val friend = userService.getUser(friendId!!)
-
-                        if (friendService.addFriend(me, friend!!)) {
+                        if (friendService.addFriend(me.id, friendId!!)) {
                             return@put call.success()
                         } else {
                             return@put call.serverIssue()
                         }
                     }
-                    post("send") {
-                        val payload = call.receive<MessagePayload>()
-                        val p = Parameters(call.parameters)
-                        val friendId by p.parameter("friend", Converter.Int)
-                        if (!p.isValid) {
-                            return@post call.badRequest(p.getIssues)
-                        }
-
-                        val principal = call.principal<JWTPrincipal>()
-                        val me = principal!!.fetchUser(userService)!!
-
-                        val friend = userService.getUser(friendId!!)
-
-                        if (friendService.sendMessage(me, friend!!, payload.content)) {
-                            return@post call.success()
-                        } else {
-                            return@post call.serverIssue()
-                        }
-                    }
-                    get("messages") {
-                        val p = Parameters(call.parameters)
-                        val friendId by p.parameter("friend", Converter.Int)
-                        if (!p.isValid) {
-                            return@get call.badRequest(p.getIssues)
-                        }
-
-                        val principal = call.principal<JWTPrincipal>()
-                        val me = principal!!.fetchUser(userService)!!
-
-                        val friend = userService.getUser(friendId!!)
-
-                        val messages =
-                            friendService.getMessages(me, friend!!) ?: return@get call.respond(HttpStatusCode.NotFound)
-
-                        return@get call.respond(messages.map {
-                            it.toMessagesMessage()
-                        })
-                    }
-                }
-            }
-            route("friendrequests") {
-                put { // accept/decline request
-                    val response = call.receive<RespondFriendRequest>()
-
-                    val principal = call.principal<JWTPrincipal>()
-                    val me = principal!!.fetchUser(userService)!!
-
-                    if (friendRequestService.changePendingRequestState(
-                            response.id,
-                            response.response.toFriendRequestState(),
-                            me
-                        )
-                    ) {
-                        call.success()
-                    } else {
-                        call.serverIssue()
-                    }
-                }
-                post { // create request
-                    val response = call.receive<CreateFriendRequest>() // TODO accept username
-                    val principal = call.principal<JWTPrincipal>()
-                    val me = principal!!.fetchUser(userService)!!
-
-                    if (friendRequestService.createRequest(me, userService.getUser(response.receiver)!!)) {
-                        call.success()
-                    } else {
-                        call.serverIssue()
-                    }
-                }
-                get { // pending requests
-                    val principal = call.principal<JWTPrincipal>()
-                    val me = principal!!.fetchUser(userService)!!
-
-                    call.respond(
-                        friendRequestService.getPendingRequests(me).map {
-                            it.toFriendRequestsRequest()
-                        }.toList()
-                    )
                 }
             }
         }

@@ -4,8 +4,8 @@ import Converter
 import Parameters
 import Responses.Companion.badRequest
 import Responses.Companion.notFound
-import database.UserService
 import database.fetchUser
+import database.servicies.users.UserService
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
