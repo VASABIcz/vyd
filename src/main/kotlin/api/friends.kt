@@ -5,75 +5,144 @@ import Parameters
 import Responses.Companion.badRequest
 import Responses.Companion.serverIssue
 import Responses.Companion.success
-import database.servicies.friendRequests.FriendRequestService
+import data.requests.MessagePayload
 import database.servicies.friends.FriendService
-import database.servicies.users.UserService
-import database.servicies.users.fetchUser
+import database.servicies.users.userId
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import wrapers.FriendWrapper
 
 fun Application.friends(
-    userService: UserService,
     friendService: FriendService,
-    friendRequestService: FriendRequestService
+    friendWrapper: FriendWrapper
 ) {
     routing {
-        authenticate {
-            route("/friends") {
+        route("friends") {
+            authenticate {
                 get {
-                    val principal = call.principal<JWTPrincipal>()
-                    val me = principal!!.fetchUser(userService)!!
+                    val me = call.principal<JWTPrincipal>()!!.userId!!
 
-                    val f = friendService.getFriends(me.id)
-                    return@get call.respond(f.map { it.toFriendsFriend(me.id) })
+                    val f = friendService.getFriends(me)
+                    return@get call.respond(f.map { it.toFriendsFriend(me) })
                 }
-                route("{friend}") {
-                    get {
-                        val p = Parameters(call.parameters)
-                        val friendId by p.parameter("friend", Converter.Int)
-                        if (!p.isValid) {
-                            return@get call.badRequest(p.getIssues)
+                route("friend") {
+                    route("{friend_id}") {
+                        get {
+                            val p = Parameters(call.parameters)
+                            val friendId by p.parameter("friend_id", Converter.Int)
+                            if (!p.isValid) {
+                                return@get call.badRequest(p.getIssues)
+                            }
+
+                            val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                            val f = friendService.getFriendship(me, friendId!!)
+                            return@get call.respond(f!!.toFriendsFriend(me))
                         }
+                        delete {
+                            val p = Parameters(call.parameters)
+                            val friendId by p.parameter("friend", Converter.Int)
+                            if (!p.isValid) {
+                                return@delete call.badRequest(p.getIssues)
+                            }
 
-                        val principal = call.principal<JWTPrincipal>()
-                        val me = principal!!.fetchUser(userService)!!
+                            val me = call.principal<JWTPrincipal>()!!.userId!!
 
-                        val f = friendService.getFriendship(me.id, friendId!!)
-                        return@get call.respond(f!!.toFriendsFriend(me.id))
-                    }
-                    delete {
-                        val p = Parameters(call.parameters)
-                        val friendId by p.parameter("friend", Converter.Int)
-                        if (!p.isValid) {
-                            return@delete call.badRequest(p.getIssues)
+                            if (friendService.removeFriend(me, friendId!!)) {
+                                return@delete call.success()
+                            } else {
+                                return@delete call.serverIssue()
+                            }
                         }
+                        route("messages") {
+                            get {
+                                val p = Parameters(call.parameters)
+                                val friendId by p.parameter("friend_id", Converter.Int)
+                                if (!p.isValid) {
+                                    return@get call.badRequest(p.getIssues)
+                                }
 
-                        val principal = call.principal<JWTPrincipal>()
-                        val me = principal!!.fetchUser(userService)!!
+                                val me = call.principal<JWTPrincipal>()!!.userId!!
 
-                        if (friendService.removeFriend(me.id, friendId!!)) {
-                            return@delete call.success()
-                        } else {
-                            return@delete call.serverIssue()
-                        }
-                    }
-                    put {
-                        val p = Parameters(call.parameters)
-                        val friendId by p.parameter("friend", Converter.Int)
-                        if (!p.isValid) {
-                            return@put call.badRequest(p.getIssues)
-                        }
+                                val messages =
+                                    friendWrapper.getMessages(me, friendId!!) ?: return@get call.serverIssue()
 
-                        val principal = call.principal<JWTPrincipal>()
-                        val me = principal!!.fetchUser(userService)!!
+                                call.respond(messages)
+                            }
+                            post {
+                                val message = call.receive<MessagePayload>()
 
-                        if (friendService.addFriend(me.id, friendId!!)) {
-                            return@put call.success()
-                        } else {
-                            return@put call.serverIssue()
+                                val p = Parameters(call.parameters)
+                                val friendId by p.parameter("friend_id", Converter.Int)
+                                if (!p.isValid) {
+                                    return@post call.badRequest(p.getIssues)
+                                }
+
+                                val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                if (friendWrapper.sendMessage(me, friendId!!, message.content)) {
+                                    call.success()
+                                } else {
+                                    call.serverIssue()
+                                }
+                            }
+                            route("message") {
+                                route("{message_id}") {
+                                    get {
+                                        val p = Parameters(call.parameters)
+                                        val friendId by p.parameter("friend_id", Converter.Int)
+                                        val messageId by p.parameter("message_id", Converter.Int)
+                                        if (!p.isValid) {
+                                            return@get call.badRequest(p.getIssues)
+                                        }
+
+                                        val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                        val message = friendWrapper.getMessage(me, friendId!!, messageId!!)
+                                            ?: return@get call.serverIssue()
+
+                                        call.respond(message)
+                                    }
+                                    delete {
+                                        val p = Parameters(call.parameters)
+                                        val friendId by p.parameter("friend_id", Converter.Int)
+                                        val messageId by p.parameter("message_id", Converter.Int)
+                                        if (!p.isValid) {
+                                            return@delete call.badRequest(p.getIssues)
+                                        }
+
+                                        val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                        if (friendWrapper.deleteMessage(me, friendId!!, messageId!!)) {
+                                            call.success()
+                                        } else {
+                                            call.serverIssue()
+                                        }
+                                    }
+                                    patch {
+                                        val message = call.receive<MessagePayload>()
+
+                                        val p = Parameters(call.parameters)
+                                        val friendId by p.parameter("friend_id", Converter.Int)
+                                        val messageId by p.parameter("message_id", Converter.Int)
+                                        if (!p.isValid) {
+                                            return@patch call.badRequest(p.getIssues)
+                                        }
+
+                                        val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                        if (friendWrapper.editMessage(me, friendId!!, messageId!!, message.content)) {
+                                            call.success()
+                                        } else {
+                                            call.serverIssue()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
