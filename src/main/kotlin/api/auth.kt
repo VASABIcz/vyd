@@ -1,9 +1,6 @@
 package api
 
 import Responses.Companion.serverIssue
-import auth.hash.HashingService
-import auth.token.TokenConfig
-import auth.token.TokenService
 import data.requests.SigninUserId
 import data.requests.SigninUsername
 import data.requests.SignupCredentials
@@ -21,9 +18,6 @@ import wrapers.UserWrapper
 
 fun Application.auth(
     userService: UserService,
-    hashingService: HashingService,
-    tokenService: TokenService,
-    config: TokenConfig,
     userWrapper: UserWrapper,
     hashWrapper: HashWrapper
 ) {

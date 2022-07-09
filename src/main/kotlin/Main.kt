@@ -80,7 +80,7 @@ fun main() {
         configureCallLogging()
         configureMetrics()
 
-        auth(userService, hashingService, tokenService, config, userWrapper, hashWrapper)
+        auth(userService, userWrapper, hashWrapper)
         friends(friendService, friendWrapper)
         users(userService)
         guilds(guildMemberService, guildWrapper)
