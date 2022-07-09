@@ -49,3 +49,5 @@ fun JWTPrincipal.fetchUser(userService: UserService): DatabaseUser? {
         userService.getUser(it)
     }
 }
+
+val JWTPrincipal.userId get() = this.getClaim("id", Int::class)
