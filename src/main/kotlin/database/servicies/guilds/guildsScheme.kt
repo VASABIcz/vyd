@@ -1,5 +1,8 @@
 package database.servicies.guilds
 
+import data.responses.GuildsChannel
+import data.responses.GuildsGuild
+import data.responses.MembersMember
 import database.servicies.channels.DatabaseChannel
 import database.servicies.channels.DatabaseChannels
 import database.servicies.users.DatabaseUser
@@ -18,6 +21,10 @@ interface DatabaseGuild : Entity<DatabaseGuild> {
     var name: String
     val owner: DatabaseUser
     val timestamp: Instant
+
+    fun toGuildsGuild(): GuildsGuild {
+        return GuildsGuild(name, owner, timestamp.toEpochMilli(), id)
+    }
 }
 
 object DatabaseGuilds : Table<DatabaseGuild>("guilds") {
@@ -34,6 +41,14 @@ interface DatabaseMember : Entity<DatabaseMember> {
     val guild: DatabaseGuild
     var nick: String
     val timestamp: Instant
+
+    fun toGuildsGuild(): GuildsGuild {
+        return guild.toGuildsGuild()
+    }
+
+    fun toMembersMember(): MembersMember {
+        return MembersMember(user.toUsersUser(), nick, guild.toGuildsGuild(), timestamp.toEpochMilli())
+    }
 }
 
 object DatabaseMembers : Table<DatabaseMember>("members") {
@@ -49,6 +64,10 @@ interface DatabaseGuildChannel : Entity<DatabaseGuildChannel> {
     val guild: DatabaseGuild
     val channel: DatabaseChannel
     var name: String
+
+    fun toGuildsChannel(): GuildsChannel {
+        return GuildsChannel(guild.toGuildsGuild(), name, channel.toChannelsChannel())
+    }
 }
 
 object DatabaseGuildChannels : Table<DatabaseGuildChannel>("guild_channels") {
