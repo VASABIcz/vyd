@@ -8,4 +8,6 @@ interface GuildService {
     fun editGuild(id: Int, name: String): Boolean
 
     fun getGuild(id: Int): DatabaseGuild?
+
+    fun renameGuild(id: Int, name: String): Boolean
 }
