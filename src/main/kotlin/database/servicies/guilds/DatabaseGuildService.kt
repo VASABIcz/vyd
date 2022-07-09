@@ -32,4 +32,11 @@ class DatabaseGuildService(private val database: Database) : GuildService {
     override fun getGuild(id: Int): DatabaseGuild? {
         return guilds.find { DatabaseGuilds.id eq id }
     }
+
+    override fun renameGuild(id: Int, name: String): Boolean {
+        val guild = getGuild(id) ?: return false
+
+        guild.name = name
+        return guild.flushChanges() > 0
+    }
 }
