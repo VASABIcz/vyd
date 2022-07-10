@@ -44,7 +44,7 @@ class DatabaseUserService(private val database: Database) : UserService {
     }
 }
 
-fun JWTPrincipal.fetchUser(userService: UserService): DatabaseUser? {
+fun JWTPrincipal.fetchUser(userService: UserService): User? {
     return this.getClaim("id", Int::class)?.let {
         userService.getUser(it)
     }
