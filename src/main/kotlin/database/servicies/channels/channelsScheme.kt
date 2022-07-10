@@ -8,19 +8,27 @@ import org.ktorm.schema.int
 import org.ktorm.schema.timestamp
 import java.time.Instant
 
+interface Channel {
+    val id: Int
+    val timestamp: Instant
+    val type: ChannelType
+
+    fun toChannelsChannel(): ChannelsChannel
+}
+
 @kotlinx.serialization.Serializable
 enum class ChannelType {
     friends, text, voice, group, category
 }
 
-interface DatabaseChannel : Entity<DatabaseChannel> {
+interface DatabaseChannel : Entity<DatabaseChannel>, Channel {
     companion object : Entity.Factory<DatabaseChannel>()
 
-    val id: Int
-    val timestamp: Instant
-    val type: ChannelType
+    override val id: Int
+    override val timestamp: Instant
+    override val type: ChannelType
 
-    fun toChannelsChannel(): ChannelsChannel {
+    override fun toChannelsChannel(): ChannelsChannel {
         return ChannelsChannel(id, timestamp.toEpochMilli(), type)
     }
 }

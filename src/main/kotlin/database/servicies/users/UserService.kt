@@ -5,9 +5,9 @@ import auth.hash.SaltedHash
 interface UserService {
     fun createUser(username: String, hash: SaltedHash, discriminator: String): Int?
 
-    fun getUser(username: String, discriminator: String): DatabaseUser?
+    fun getUser(username: String, discriminator: String): User?
 
-    fun getUser(id: Int): DatabaseUser?
+    fun getUser(id: Int): User?
 
     fun deleteUser(id: Int): Boolean
 

@@ -12,16 +12,26 @@ import org.ktorm.schema.text
 import org.ktorm.schema.timestamp
 import java.time.Instant
 
-interface DatabaseMessage : Entity<DatabaseMessage> {
-    companion object : Entity.Factory<DatabaseMessage>()
-
+interface Message {
     val id: Int
-    var content: String
+    val content: String
     val author: DatabaseUser
     val timestamp: Instant
     val channel: DatabaseChannel
 
-    fun toMessagesMessage(): MessagesMessage {
+    fun toMessagesMessage(): MessagesMessage
+}
+
+interface DatabaseMessage : Entity<DatabaseMessage>, Message {
+    companion object : Entity.Factory<DatabaseMessage>()
+
+    override val id: Int
+    override var content: String
+    override val author: DatabaseUser
+    override val timestamp: Instant
+    override val channel: DatabaseChannel
+
+    override fun toMessagesMessage(): MessagesMessage {
         return MessagesMessage(id, author.toUsersUser(), content, timestamp.toEpochMilli(), channel.id)
     }
 }

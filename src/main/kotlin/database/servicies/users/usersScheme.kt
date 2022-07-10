@@ -5,9 +5,7 @@ import org.ktorm.entity.Entity
 import org.ktorm.schema.*
 import java.time.Instant
 
-interface DatabaseUser : Entity<DatabaseUser> {
-    companion object : Entity.Factory<DatabaseUser>()
-
+interface User {
     val id: Int
     val name: String
     val hash: ByteArray
@@ -18,6 +16,17 @@ interface DatabaseUser : Entity<DatabaseUser> {
     fun toUsersUser(): UsersUser {
         return UsersUser(id, name, discriminator)
     }
+}
+
+interface DatabaseUser : Entity<DatabaseUser>, User {
+    companion object : Entity.Factory<DatabaseUser>()
+
+    override val id: Int
+    override val name: String
+    override val hash: ByteArray
+    override val discriminator: String
+    override val registerDate: Instant
+    override val salt: ByteArray
 }
 
 object DatabaseUsers : Table<DatabaseUser>("users") {

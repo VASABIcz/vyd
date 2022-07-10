@@ -1,24 +1,35 @@
 package database.servicies.friends
 
 import data.responses.FriendsFriend
+import database.servicies.channels.Channel
 import database.servicies.channels.DatabaseChannel
 import database.servicies.channels.DatabaseChannels
 import database.servicies.users.DatabaseUser
 import database.servicies.users.DatabaseUsers
+import database.servicies.users.User
 import org.ktorm.entity.Entity
 import org.ktorm.schema.Table
 import org.ktorm.schema.boolean
 import org.ktorm.schema.int
 
-interface DatabaseFriend : Entity<DatabaseFriend> {
-    companion object : Entity.Factory<DatabaseFriend>()
-
-    val user1: DatabaseUser
-    val user2: DatabaseUser
-    val channel: DatabaseChannel
+interface Friend {
+    val user1: User
+    val user2: User
+    val channel: Channel
     var areFriends: Boolean
 
-    fun toFriendsFriend(me: Int): FriendsFriend {
+    fun toFriendsFriend(me: Int): FriendsFriend
+}
+
+interface DatabaseFriend : Entity<DatabaseFriend>, Friend {
+    companion object : Entity.Factory<DatabaseFriend>()
+
+    override val user1: DatabaseUser
+    override val user2: DatabaseUser
+    override val channel: DatabaseChannel
+    override var areFriends: Boolean
+
+    override fun toFriendsFriend(me: Int): FriendsFriend {
         return FriendsFriend(
             if (user1.id != me) user1.toUsersUser() else user2.toUsersUser(),
             channel.id,

@@ -5,5 +5,5 @@ interface ChannelService {
 
     fun deleteChannel(id: Int): Boolean
 
-    fun getChannel(id: Int): DatabaseChannel?
+    fun getChannel(id: Int): Channel?
 }

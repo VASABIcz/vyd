@@ -3,12 +3,24 @@ package database.servicies.friendRequests
 import data.responses.FriendRequestsRequest
 import database.servicies.users.DatabaseUser
 import database.servicies.users.DatabaseUsers
+import database.servicies.users.User
 import org.ktorm.entity.Entity
 import org.ktorm.schema.Table
 import org.ktorm.schema.enum
 import org.ktorm.schema.int
 import org.ktorm.schema.timestamp
 import java.time.Instant
+
+
+interface FriendRequest {
+    val id: Int
+    val requester: User
+    val receiver: User
+    var state: FriendRequestState
+    val timestamp: Instant
+
+    fun toFriendRequestsRequest(): FriendRequestsRequest
+}
 
 @kotlinx.serialization.Serializable
 enum class FriendRequestState {
@@ -30,16 +42,16 @@ fun FriendRequestResponse.toFriendRequestState(): FriendRequestState {
     }
 }
 
-interface DatabaseFriendRequest : Entity<DatabaseFriendRequest> {
+interface DatabaseFriendRequest : Entity<DatabaseFriendRequest>, FriendRequest {
     companion object : Entity.Factory<DatabaseFriendRequest>()
 
-    val id: Int
-    val requester: DatabaseUser
-    val receiver: DatabaseUser
-    var state: FriendRequestState
-    val timestamp: Instant
+    override val id: Int
+    override val requester: DatabaseUser
+    override val receiver: DatabaseUser
+    override var state: FriendRequestState
+    override val timestamp: Instant
 
-    fun toFriendRequestsRequest(): FriendRequestsRequest {
+    override fun toFriendRequestsRequest(): FriendRequestsRequest {
         return FriendRequestsRequest(id, requester.toUsersUser(), timestamp.toEpochMilli())
     }
 }
