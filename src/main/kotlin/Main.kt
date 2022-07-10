@@ -53,7 +53,8 @@ fun main() {
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
             audience = "users",
             expiresIn = 1000L * 60L * 60L * 24L * 365L,
-            secret = System.getenv("secret")
+            secret = System.getenv("secret"),
+            realm = System.getenv("realm") // FIXME not sure about this
         )
 
         val friendRequestWrapper = FriendRequestWrapper(database, friendRequestService, friendService)
