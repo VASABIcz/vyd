@@ -10,7 +10,7 @@ import io.ktor.server.auth.jwt.*
 fun Application.configureSecurity(config: TokenConfig) {
     authentication {
         jwt {
-            realm = System.getenv("realm") // FIXME not sure about this
+            realm = config.realm
 
             verifier(
                 JWT
