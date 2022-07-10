@@ -55,5 +55,13 @@ application {
         implementation("com.rabbitmq:amqp-client:5.15.0")
         // redis
         implementation("io.github.crackthecodeabhi:kreds:0.7")
+        // ktor testing
+        testImplementation("io.ktor:ktor-server-test-host:2.0.2")
+        testImplementation("org.jetbrains.kotlin:kotlin-test:1.7.0")
+        // tesing
+        testImplementation("junit:junit:4.13.2")
+        // sqlite for testing
+        implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+
     }
 }
