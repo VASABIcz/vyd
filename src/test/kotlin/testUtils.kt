@@ -1,28 +1,8 @@
-import api.configuration.configureNegotiation
-import api.configureSecurity
-import auth.hash.SHA256HashingService
 import auth.hash.SaltedHash
-import auth.token.JwtService
-import auth.token.TokenConfig
-import data.requests.SigninUsername
 import database.servicies.usernames.UsernameService
 import database.servicies.users.User
 import database.servicies.users.UserService
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
-import junit.framework.TestCase.assertEquals
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import org.junit.Test
-import org.ktorm.database.Database
-import wrapers.HashWrapper
-import wrapers.UserWrapper
 import java.time.Instant
-import api.auth as authRoute
-import users as usersRoute
-
 
 data class TestingUser(
     override val id: Int,
@@ -64,15 +44,16 @@ class TestUserService(val users: MutableList<User>) : UserService {
     var ids = 0
 
     override fun createUser(username: String, hash: SaltedHash, discriminator: String): Int? {
+        println(users)
         val id = ids++
         users.add(
             TestingUser(
                 id,
                 username,
-                hash.hash.encodeToByteArray(),
+                hash.hash.toByteArray(),
                 discriminator,
                 Instant.now(),
-                hash.salt.encodeToByteArray()
+                hash.salt.toByteArray()
             )
         )
 
@@ -80,18 +61,21 @@ class TestUserService(val users: MutableList<User>) : UserService {
     }
 
     override fun getUser(username: String, discriminator: String): User? {
+        println(users)
         return users.find {
             it.name == username && it.discriminator == discriminator
         }
     }
 
     override fun getUser(id: Int): User? {
+        println(users)
         return users.find {
             it.id == id
         }
     }
 
     override fun deleteUser(id: Int): Boolean {
+        println(users)
         users.forEachIndexed { index, user ->
             if (user.id == id) {
                 users.removeAt(index)
@@ -102,6 +86,7 @@ class TestUserService(val users: MutableList<User>) : UserService {
     }
 
     override fun deleteUser(username: String, discriminator: String): Boolean {
+        println(users)
         users.forEachIndexed { index, user ->
             if (user.name == username && user.discriminator == discriminator) {
                 users.removeAt(index)
@@ -125,44 +110,4 @@ class TestUsernameService : UsernameService {
         return true
     }
 
-}
-
-class ApplicationTest {
-    @Test
-    fun testRoot() = testApplication {
-        val database = Database.connect(
-            "jdbc:sqlite::memory:"
-        )
-        val userService = TestUserService(mutableListOf())
-        val usernameService = TestUsernameService()
-        val hashingService = SHA256HashingService()
-        val tokenService = JwtService()
-        val config = TokenConfig(
-            issuer = "http://127.0.0.1:8080",
-            audience = "users",
-            expiresIn = 1000L * 60L * 60L * 24L * 365L,
-            secret = "very hidden secret",
-            realm = "here"
-        )
-
-        val userWrapper = UserWrapper(database, userService, usernameService, hashingService)
-        val hashWrapper = HashWrapper(hashingService, userService, tokenService, config)
-
-        application {
-            configureSecurity(config)
-            configureNegotiation()
-            usersRoute(userService)
-            authRoute(userService, userWrapper, hashWrapper)
-        }
-
-        // test
-        val test = client.get("auth/test")
-        assertEquals("unauthorized baka", test.body())
-
-        val signin1 = client.post("auth/signin") {
-            setBody(Json.encodeToString(SigninUsername("vasabi", "0", "123")))
-            contentType(ContentType.Application.Json)
-        }
-        assertEquals(HttpStatusCode.InternalServerError, signin1.status)
-    }
 }
