@@ -1,9 +1,17 @@
+## .env
 
+### web server
 
+- port
+- host
 
-## TODO
-- setup orm
-- setup authentication
-- create db scheme
-- create routes
-- simple js ui
+### database
+
+- database_uri
+- database_username
+- database_password
+
+### auth
+
+- secret
+- realm
