@@ -24,6 +24,7 @@ application {
     dependencies {
         // kotlin orm
         implementation("org.ktorm:ktorm-core:3.5.0")
+        implementation("org.ktorm:ktorm-support-postgresql:3.5.0")
         // webserver
         implementation("io.ktor:ktor-server-core:2.0.2")
         implementation("io.ktor:ktor-server-netty:2.0.2")
@@ -62,6 +63,5 @@ application {
         testImplementation("junit:junit:4.13.2")
         // sqlite for testing
         implementation("org.xerial:sqlite-jdbc:3.36.0.3")
-
     }
 }
