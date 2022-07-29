@@ -13,7 +13,9 @@ interface Channel {
     val timestamp: Instant
     val type: ChannelType
 
-    fun toChannelsChannel(): ChannelsChannel
+    fun toChannelsChannel(): ChannelsChannel {
+        return ChannelsChannel(id, timestamp.toEpochMilli(), type)
+    }
 }
 
 @kotlinx.serialization.Serializable
@@ -27,10 +29,6 @@ interface DatabaseChannel : Entity<DatabaseChannel>, Channel {
     override val id: Int
     override val timestamp: Instant
     override val type: ChannelType
-
-    override fun toChannelsChannel(): ChannelsChannel {
-        return ChannelsChannel(id, timestamp.toEpochMilli(), type)
-    }
 }
 
 object DatabaseChannels : Table<DatabaseChannel>("channels") {
