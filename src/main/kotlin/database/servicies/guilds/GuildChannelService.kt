@@ -11,7 +11,7 @@ interface GuildChannelService {
 
     fun editChannel(id: Int, guild: Int, name: String): Boolean
 
-    fun getChannels(guild: Int): List<DatabaseGuildChannel>
+    fun getChannels(guild: Int): List<GuildChannel>
 
-    fun getChannel(id: Int, guild: Int): DatabaseGuildChannel?
+    fun getChannel(id: Int, guild: Int): GuildChannel?
 }
