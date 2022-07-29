@@ -7,12 +7,11 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
-import java.time.Instant
 
 
 class UserTests {
     var userService: UserService =
-        TestUserService(mutableListOf(TestingUser(0, "bob", "".toByteArray(), "0", Instant.now(), "".toByteArray())))
+        TestUserService(mutableListOf(TestingUser(0, "bob", "0")))
     var config: TokenConfig = TokenConfig(
         issuer = "http://127.0.0.1:8080",
         audience = "users",
