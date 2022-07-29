@@ -1,5 +1,6 @@
 package wrapers
 
+import Config
 import data.responses.GuildsChannel
 import data.responses.MembersMember
 import data.responses.MessagesMessage
@@ -90,12 +91,21 @@ class GuildWrapper(
         userId: Int,
         guildId: Int,
         channelId: Int,
-        amount: Int = 50,
-        offset: Int = 0
+        amount: Int? = Config.messageAmountDefault,
+        offset: Int? = 0
     ): List<MessagesMessage>? {
         if (!isMember(userId, guildId) || !isGuildChannel(channelId, guildId)) {
             return null
         }
+
+        // TODO amount validation f???
+        var amount = amount ?: Config.messageAmountDefault
+        if (amount > Config.messageAmountLimit) {
+            amount = Config.messageAmountDefault
+        } else if (amount < 0) {
+            return null
+        }
+        val offset = offset ?: 0
 
         return messageService.getMessages(channelId, amount, offset).map {
             it.toMessagesMessage()
