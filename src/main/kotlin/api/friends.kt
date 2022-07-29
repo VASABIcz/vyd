@@ -66,10 +66,24 @@ fun Application.friends(
                                     return@get call.badRequest(p.getIssues)
                                 }
 
+                                val q = Parameters(call.request.queryParameters)
+                                val amount by q.parameter("amount", Converter.Int, optional = true)
+                                val offset by q.parameter("offset", Converter.Int, optional = true)
+                                val id by q.parameter("id", Converter.Int, optional = true)
+                                // TODO
+                                val asc by q.parameter("asc", Converter.Boolean, optional = true)
+                                val start by q.parameter("start", Converter.Int, optional = true)
+                                val end by q.parameter("end", Converter.Int, optional = true)
+                                val author by q.parameter("author", Converter.Int, optional = true)
+                                if (!q.isValid) {
+                                    return@get call.badRequest(q.getIssues)
+                                }
+
                                 val me = call.principal<JWTPrincipal>()!!.userId!!
 
                                 val messages =
-                                    friendWrapper.getMessages(me, friendId!!) ?: return@get call.serverIssue()
+                                    friendWrapper.getMessages(me, friendId!!, amount, offset)
+                                        ?: return@get call.serverIssue()
 
                                 call.respond(messages)
                             }
