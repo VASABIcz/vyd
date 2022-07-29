@@ -55,7 +55,7 @@ fun Application.auth(
                 if (hash == null) {
                     return@post call.serverIssue()
                 } else {
-                    return@post call.respond(mapOf("hash" to hash))
+                    return@post call.respond(mapOf("token" to hash))
                 }
             }
             authenticate(optional = true) {
