@@ -1,10 +1,12 @@
 package database.servicies.messages
 
 import data.responses.MessagesMessage
+import database.servicies.channels.Channel
 import database.servicies.channels.DatabaseChannel
 import database.servicies.channels.DatabaseChannels
 import database.servicies.users.DatabaseUser
 import database.servicies.users.DatabaseUsers
+import database.servicies.users.User
 import org.ktorm.entity.Entity
 import org.ktorm.schema.Table
 import org.ktorm.schema.int
@@ -15,11 +17,13 @@ import java.time.Instant
 interface Message {
     val id: Int
     val content: String
-    val author: DatabaseUser
+    val author: User
     val timestamp: Instant
-    val channel: DatabaseChannel
+    val channel: Channel
 
-    fun toMessagesMessage(): MessagesMessage
+    fun toMessagesMessage(): MessagesMessage {
+        return MessagesMessage(id, author.toUsersUser(), content, timestamp.toEpochMilli(), channel.id)
+    }
 }
 
 interface DatabaseMessage : Entity<DatabaseMessage>, Message {
@@ -30,10 +34,6 @@ interface DatabaseMessage : Entity<DatabaseMessage>, Message {
     override val author: DatabaseUser
     override val timestamp: Instant
     override val channel: DatabaseChannel
-
-    override fun toMessagesMessage(): MessagesMessage {
-        return MessagesMessage(id, author.toUsersUser(), content, timestamp.toEpochMilli(), channel.id)
-    }
 }
 
 object DatabaseMessages : Table<DatabaseMessage>("messages") {
