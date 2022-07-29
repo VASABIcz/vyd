@@ -6,6 +6,8 @@ import api.configuration.configureNegotiation
 import auth.hash.SHA256HashingService
 import auth.token.JwtService
 import auth.token.TokenConfig
+import database.servicies.avatars.DatabaseAvatarsService
+import database.servicies.avatars.DatabaseDefaultAvatarService
 import database.servicies.channels.DatabaseChannelService
 import database.servicies.friendRequests.DatabaseFriendRequestService
 import database.servicies.friends.DatabaseFriendService
@@ -21,6 +23,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
+import org.ktorm.support.postgresql.PostgreSqlDialect
 import wrapers.*
 
 
@@ -34,7 +37,8 @@ fun main() {
         val database = Database.connect(
             System.getenv("database_uri"),
             user = System.getenv("database_username"),
-            password = System.getenv("database_password")
+            password = System.getenv("database_password"),
+            dialect = PostgreSqlDialect()
         )
 
         val usernameService = DatabaseUsernameService(database)
@@ -48,6 +52,9 @@ fun main() {
         val guildChannelService = DatabaseGuildChannelService(database)
         val channelService = DatabaseChannelService(database)
         val messageService = DatabaseMessageService(database)
+        val avatarService = DatabaseAvatarsService(database)
+        val defaultAvatarService = DatabaseDefaultAvatarService(database)
+        val avatarWrapper = AvatarWrapper(avatarService, defaultAvatarService)
 
         val config = TokenConfig(
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
@@ -83,7 +90,7 @@ fun main() {
 
         auth(userService, userWrapper, hashWrapper)
         friends(friendService, friendWrapper)
-        users(userService)
+        users(userService, avatarWrapper)
         guilds(guildMemberService, guildWrapper)
         friendRequests(friendRequestService, friendRequestWrapper)
     }.start(wait = true)
