@@ -7,9 +7,9 @@ interface GuildMemberService {
 
     fun changeNick(user: Int, guild: Int, nick: String): Boolean
 
-    fun getMember(user: Int, guild: Int): DatabaseMember?
+    fun getMember(user: Int, guild: Int): GuildMember?
 
-    fun getMembers(guild: Int, amount: Int = 50, offset: Int = 0): List<DatabaseMember>
+    fun getMembers(guild: Int, amount: Int = 50, offset: Int = 0): List<GuildMember>
 
-    fun getGuilds(user: Int): List<DatabaseMember>
+    fun getGuilds(user: Int): List<GuildMember>
 }
