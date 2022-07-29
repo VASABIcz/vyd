@@ -4,10 +4,7 @@ import org.ktorm.database.Database
 import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.insert
-import org.ktorm.entity.filter
-import org.ktorm.entity.find
-import org.ktorm.entity.sequenceOf
-import org.ktorm.entity.toList
+import org.ktorm.entity.*
 
 class DatabaseGuildMemberService(private val database: Database) : GuildMemberService {
     private val members get() = database.sequenceOf(DatabaseMembers)
@@ -39,7 +36,7 @@ class DatabaseGuildMemberService(private val database: Database) : GuildMemberSe
     override fun getMembers(guild: Int, amount: Int, offset: Int): List<DatabaseMember> {
         return members.filter {
             DatabaseMembers.guild_id eq guild
-        }.toList()
+        }.drop(offset).take(amount).toList()
     }
 
     override fun getGuilds(user: Int): List<DatabaseMember> {
