@@ -1,5 +1,6 @@
 package wrapers
 
+import Config
 import data.responses.MessagesMessage
 import database.servicies.friends.FriendService
 import database.servicies.messages.MessageService
@@ -8,10 +9,25 @@ class FriendWrapper(
     private val friendService: FriendService,
     private val messageService: MessageService
 ) {
-    fun getMessages(userId: Int, friendId: Int): List<MessagesMessage>? {
+    fun getMessages(
+        userId: Int,
+        friendId: Int,
+        amount: Int? = Config.messageAmountDefault,
+        offset: Int? = 0
+    ): List<MessagesMessage>? {
         val friends = friendService.getFriendship(userId, friendId) ?: return null
 
-        val messages = messageService.getMessages(friends.channel.id)
+        var amount = amount ?: Config.messageAmountDefault
+        val offset = offset ?: 0
+
+
+        if (amount > Config.messageAmountLimit) {
+            amount = Config.messageAmountDefault
+        } else if (amount < 0) {
+            return null
+        }
+
+        val messages = messageService.getMessages(friends.channel.id, amount, offset)
 
         return messages.map {
             it.toMessagesMessage()
