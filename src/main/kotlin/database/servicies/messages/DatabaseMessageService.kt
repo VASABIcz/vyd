@@ -1,12 +1,11 @@
 package database.servicies.messages
 
 import org.ktorm.database.Database
+import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
+import org.ktorm.dsl.gt
 import org.ktorm.dsl.insertAndGenerateKey
-import org.ktorm.entity.filter
-import org.ktorm.entity.find
-import org.ktorm.entity.sequenceOf
-import org.ktorm.entity.toList
+import org.ktorm.entity.*
 
 class DatabaseMessageService(private val database: Database) : MessageService {
     private val messages get() = database.sequenceOf(DatabaseMessages)
@@ -36,10 +35,16 @@ class DatabaseMessageService(private val database: Database) : MessageService {
         return message.delete() > 0
     }
 
-    override fun getMessages(channel: Int, amount: Int, offset: Int): List<DatabaseMessage> {
-        return messages.filter {
-            it.channel eq channel
-        }.toList()
+    override fun getMessages(channel: Int, amount: Int, offset: Int, id: Int?): List<DatabaseMessage> {
+        return if (id != null) {
+            messages.filter {
+                (it.channel eq channel) and (it.id gt id)
+            }.take(amount).toList()
+        } else {
+            messages.filter {
+                it.channel eq channel
+            }.drop(offset).take(amount).toList()
+        }
     }
 
 
