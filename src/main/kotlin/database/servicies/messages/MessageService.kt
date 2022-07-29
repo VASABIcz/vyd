@@ -9,5 +9,5 @@ interface MessageService {
 
     fun deleteMessage(id: Int): Boolean
 
-    fun getMessages(channel: Int, amount: Int = 0, offset: Int = 0): List<Message>
+    fun getMessages(channel: Int, amount: Int = 0, offset: Int = 0, id: Int? = null): List<Message>
 }
