@@ -32,7 +32,7 @@ interface Guild {
     val timestamp: Instant
 
     fun toGuildsGuild(): GuildsGuild {
-        return GuildsGuild(name, owner, timestamp.toEpochMilli(), id)
+        return GuildsGuild(name, owner.toUsersUser(), timestamp.toEpochMilli(), id)
     }
 }
 
@@ -92,8 +92,8 @@ interface DatabaseGuildChannel : Entity<DatabaseGuildChannel>, GuildChannel {
     override var name: String
 }
 
-object DatabaseGuildChannels : Table<DatabaseGuildChannel>("guild_channels") {
-    val channel_id = int("channel_id").references(DatabaseChannels) { it.channel }
+object DatabaseGuildChannels : Table<DatabaseGuildChannel>("guilds_channels") {
+    val channel_id = int("channel_id").primaryKey().references(DatabaseChannels) { it.channel }
     val guild_id = int("guild_id").references(DatabaseGuilds) { it.guild }
     val name = varchar("name").bindTo { it.name }
 }
