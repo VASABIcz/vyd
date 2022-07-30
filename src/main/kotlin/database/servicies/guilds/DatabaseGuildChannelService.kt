@@ -3,6 +3,7 @@ package database.servicies.guilds
 import org.ktorm.database.Database
 import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
+import org.ktorm.dsl.insertAndGenerateKey
 import org.ktorm.entity.filter
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
@@ -10,9 +11,12 @@ import org.ktorm.entity.toList
 
 class DatabaseGuildChannelService(private val database: Database) : GuildChannelService {
     val channels get() = database.sequenceOf(DatabaseGuildChannels)
-
-    override fun moveChannel(channel: Int, guild: Int, position: Int): Boolean {
-        TODO("Not yet implemented")
+    override fun createChannel(guild: Int, channel: Int, name: String): Int? {
+        return database.insertAndGenerateKey(DatabaseGuildChannels) {
+            set(it.guild_id, guild)
+            set(it.channel_id, channel)
+            set(it.name, name)
+        } as Int?
     }
 
     override fun editChannel(id: Int, guild: Int, name: String): Boolean {
