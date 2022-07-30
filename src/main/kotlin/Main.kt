@@ -11,6 +11,7 @@ import database.servicies.avatars.DatabaseDefaultAvatarService
 import database.servicies.channels.DatabaseChannelService
 import database.servicies.friendRequests.DatabaseFriendRequestService
 import database.servicies.friends.DatabaseFriendService
+import database.servicies.guildChannels.DatabaseGuildChannelOrderingService
 import database.servicies.guilds.DatabaseGuildChannelService
 import database.servicies.guilds.DatabaseGuildMemberService
 import database.servicies.guilds.DatabaseGuildService
@@ -55,6 +56,7 @@ fun main() {
         val avatarService = DatabaseAvatarsService(database)
         val defaultAvatarService = DatabaseDefaultAvatarService(database)
         val avatarWrapper = AvatarWrapper(avatarService, defaultAvatarService)
+        val guildChannelOrderingService = DatabaseGuildChannelOrderingService(database, guildChannelService)
 
         val config = TokenConfig(
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
@@ -74,7 +76,8 @@ fun main() {
             guildMemberService,
             guildChannelService,
             channelService,
-            messageService
+            messageService,
+            guildChannelOrderingService
         )
 
         routing {
