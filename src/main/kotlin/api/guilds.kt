@@ -6,6 +6,7 @@ import Responses.Companion.badRequest
 import Responses.Companion.notFound
 import Responses.Companion.serverIssue
 import Responses.Companion.success
+import data.requests.CreateGuildChannel
 import data.requests.MessagePayload
 import database.servicies.guilds.GuildMemberService
 import database.servicies.users.userId
@@ -89,24 +90,22 @@ fun Application.guilds(
                             }
                         }
                         route("name") {
-                            route("name") {
-                                patch {
-                                    val p = Parameters(call.parameters)
-                                    val guildId by p.parameter("guild_id", Converter.Int)
-                                    val name by p.parameter("name", Converter.String)
+                            patch {
+                                val p = Parameters(call.parameters)
+                                val guildId by p.parameter("guild_id", Converter.Int)
+                                val name by p.parameter("name", Converter.String)
+                                if (!p.isValid) {
                                     if (!p.isValid) {
-                                        if (!p.isValid) {
-                                            return@patch call.badRequest(p.getIssues)
-                                        }
+                                        return@patch call.badRequest(p.getIssues)
                                     }
+                                }
 
-                                    val me = call.principal<JWTPrincipal>()!!.userId!!
+                                val me = call.principal<JWTPrincipal>()!!.userId!!
 
-                                    if (guildWrapper.renameGuild(me, guildId!!, name!!)) {
-                                        call.success()
-                                    } else {
-                                        call.serverIssue()
-                                    }
+                                if (guildWrapper.renameGuild(me, guildId!!, name!!)) {
+                                    call.success()
+                                } else {
+                                    call.serverIssue()
                                 }
                             }
                         }
@@ -127,6 +126,7 @@ fun Application.guilds(
                                     }
                                 }
                             }
+                        }
                             route("channels") {
                                 get {
                                     val p = Parameters(call.parameters)
@@ -140,16 +140,44 @@ fun Application.guilds(
                                     val me = call.principal<JWTPrincipal>()!!.userId!!
 
                                     val channels =
-                                        guildWrapper.getChannels(me, guildId!!) ?: return@get call.serverIssue()
+                                        guildWrapper.getChannelsOrdered(me, guildId!!) ?: return@get call.serverIssue()
 
-                                    call.respond(channels)
+                                    call.respond(channels.toGuildsChannels())
+                                }
+                                // Create uncategorized channels
+                                route("create") {
+                                    post {
+                                        val p = Parameters(call.parameters)
+                                        val guildId by p.parameter("guild_id", Converter.Int)
+                                        if (!p.isValid) {
+                                            if (!p.isValid) {
+                                                return@post call.badRequest(p.getIssues)
+                                            }
+                                        }
+                                        val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                        val payload = call.receive<CreateGuildChannel>()
+
+                                        if (guildWrapper.createChannel(
+                                                guildId!!,
+                                                me,
+                                                payload.name,
+                                                payload.type,
+                                                payload.category
+                                            )
+                                        ) {
+                                            call.success()
+                                        } else {
+                                            call.serverIssue()
+                                        }
+                                    }
                                 }
                                 route("channel") {
                                     route("{channel_id}") {
                                         get {
                                             val p = Parameters(call.parameters)
                                             val guildId by p.parameter("guild_id", Converter.Int)
-                                            val channelId by p.parameter("guild_id", Converter.Int)
+                                            val channelId by p.parameter("channel_id", Converter.Int)
                                             if (!p.isValid) {
                                                 if (!p.isValid) {
                                                     return@get call.badRequest(p.getIssues)
@@ -166,7 +194,7 @@ fun Application.guilds(
                                         delete {
                                             val p = Parameters(call.parameters)
                                             val guildId by p.parameter("guild_id", Converter.Int)
-                                            val channelId by p.parameter("guild_id", Converter.Int)
+                                            val channelId by p.parameter("channel_id", Converter.Int)
                                             if (!p.isValid) {
                                                 if (!p.isValid) {
                                                     return@delete call.badRequest(p.getIssues)
@@ -181,11 +209,114 @@ fun Application.guilds(
                                                 call.serverIssue()
                                             }
                                         }
+                                        route("edit") {
+                                            patch {
+                                                val p = Parameters(call.parameters)
+                                                val guildId by p.parameter("guild_id", Converter.Int)
+                                                val channelId by p.parameter("channel_id", Converter.Int)
+                                                if (!p.isValid) {
+                                                    if (!p.isValid) {
+                                                        return@patch call.badRequest(p.getIssues)
+                                                    }
+                                                }
+                                                val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                                val q = Parameters(call.request.queryParameters)
+                                                val name by q.parameter("name", Converter.String)
+                                                if (!q.isValid) {
+                                                    return@patch call.badRequest(q.getIssues)
+                                                }
+
+                                                if (guildWrapper.renameChannel(me, guildId!!, channelId!!, name!!)) {
+                                                    call.success()
+                                                } else {
+                                                    call.serverIssue()
+                                                }
+                                            }
+                                        }
+
+                                        route("move") {
+                                            patch {
+                                                val p = Parameters(call.parameters)
+                                                val guildId by p.parameter("guild_id", Converter.Int)
+                                                val channelId by p.parameter("channel_id", Converter.Int)
+                                                if (!p.isValid) {
+                                                    if (!p.isValid) {
+                                                        return@patch call.badRequest(p.getIssues)
+                                                    }
+                                                }
+                                                val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                                val q = Parameters(call.request.queryParameters)
+                                                val position by q.parameter("position", Converter.Int)
+                                                val category by q.parameter("category", Converter.Int, optional = true)
+                                                if (!q.isValid) {
+                                                    return@patch call.badRequest(q.getIssues)
+                                                }
+
+                                                if (guildWrapper.moveChannel(
+                                                        channelId!!,
+                                                        me,
+                                                        guildId!!,
+                                                        position!!,
+                                                        category
+                                                    )
+                                                ) {
+                                                    call.success()
+                                                } else {
+                                                    call.serverIssue()
+                                                }
+                                            }
+                                        }
+                                        /*
+                                        // Create channels in category
+                                        route("create") {
+                                            post {
+                                                val p = Parameters(call.parameters)
+                                                val guildId by p.parameter("guild_id", Converter.Int)
+                                                val channelId by p.parameter("channel_id", Converter.Int)
+                                                if (!p.isValid) {
+                                                    if (!p.isValid) {
+                                                        return@post call.badRequest(p.getIssues)
+                                                    }
+                                                }
+                                                val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                                val q = Parameters(call.request.queryParameters)
+                                                val name by q.parameter("name", Converter.String)
+                                                val type by q.parameter("type", Converter.Custom {
+                                                    _, type -> when (type) {
+                                                        "voice" -> {
+                                                            ChannelType.voice
+                                                        }
+                                                    "text" -> {
+                                                        ChannelType.text
+                                                    }
+                                                    else -> {
+                                                        throw Exception()
+                                                    }
+                                                }
+                                                })
+                                                if (!q.isValid) {
+                                                    return@post call.badRequest(q.getIssues)
+                                                }
+
+                                                if (guildWrapper.createChannel(guildId!!, me, name!!, type!!, channelId!!)) {
+                                                    call.success()
+                                                }
+                                                else {
+                                                    call.serverIssue()
+                                                }
+                                            }
+                                        }
+
+                                         */
+
                                         route("messages") {
                                             get {
                                                 val p = Parameters(call.parameters)
                                                 val guildId by p.parameter("guild_id", Converter.Int)
-                                                val channelId by p.parameter("guild_id", Converter.Int)
+                                                val channelId by p.parameter("channel_id", Converter.Int)
                                                 if (!p.isValid) {
                                                     if (!p.isValid) {
                                                         return@get call.badRequest(p.getIssues)
@@ -218,7 +349,7 @@ fun Application.guilds(
                                                     val message = call.receive<MessagePayload>()
                                                     val p = Parameters(call.parameters)
                                                     val guildId by p.parameter("guild_id", Converter.Int)
-                                                    val channelId by p.parameter("guild_id", Converter.Int)
+                                                    val channelId by p.parameter("channel_id", Converter.Int)
                                                     if (!p.isValid) {
                                                         if (!p.isValid) {
                                                             return@post call.badRequest(p.getIssues)
@@ -245,7 +376,7 @@ fun Application.guilds(
                                                     get {
                                                         val p = Parameters(call.parameters)
                                                         val guildId by p.parameter("guild_id", Converter.Int)
-                                                        val channelId by p.parameter("guild_id", Converter.Int)
+                                                        val channelId by p.parameter("channel_id", Converter.Int)
                                                         val messageId by p.parameter("message_id", Converter.Int)
                                                         if (!p.isValid) {
                                                             if (!p.isValid) {
@@ -270,7 +401,7 @@ fun Application.guilds(
                                                     delete {
                                                         val p = Parameters(call.parameters)
                                                         val guildId by p.parameter("guild_id", Converter.Int)
-                                                        val channelId by p.parameter("guild_id", Converter.Int)
+                                                        val channelId by p.parameter("channel_id", Converter.Int)
                                                         val messageId by p.parameter("message_id", Converter.Int)
                                                         if (!p.isValid) {
                                                             if (!p.isValid) {
@@ -355,7 +486,6 @@ fun Application.guilds(
                                     }
                                 }
                             }
-                        }
                     }
                 }
             }
