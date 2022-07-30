@@ -1,6 +1,4 @@
 package data.responses
 
-import database.servicies.users.User
-
 @kotlinx.serialization.Serializable
-data class GuildsGuild(val name: String, val owner: User, val timestamp: Long, val id: Int)
+data class GuildsGuild(val name: String, val owner: UsersUser, val timestamp: Long, val id: Int)
