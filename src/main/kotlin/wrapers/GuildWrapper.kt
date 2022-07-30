@@ -5,6 +5,9 @@ import data.responses.GuildsChannel
 import data.responses.MembersMember
 import data.responses.MessagesMessage
 import database.servicies.channels.ChannelService
+import database.servicies.channels.ChannelType
+import database.servicies.guildChannels.Chans
+import database.servicies.guildChannels.GuildChannelOrderingService
 import database.servicies.guilds.GuildChannelService
 import database.servicies.guilds.GuildMemberService
 import database.servicies.guilds.GuildService
@@ -17,7 +20,8 @@ class GuildWrapper(
     private val memberService: GuildMemberService,
     private val guildChannelService: GuildChannelService,
     private val channelService: ChannelService,
-    private val messageService: MessageService
+    private val messageService: MessageService,
+    private val guildChannelOrderingService: GuildChannelOrderingService
 ) {
 
     fun isMember(userId: Int, guildId: Int): Boolean {
@@ -36,6 +40,9 @@ class GuildWrapper(
     fun createGuild(owner: Int, name: String): Boolean {
         database.useTransaction {
             val guildId = guildService.createGuild(owner, name) ?: throw Throwable("failed to create guild")
+            if (!guildChannelOrderingService.createRecord(guildId)) {
+                throw Throwable("failed to create channel ordering")
+            }
             if (!memberService.joinGuild(owner, guildId)) {
                 throw Throwable("failed to join guild")
             }
@@ -53,12 +60,56 @@ class GuildWrapper(
         }
     }
 
+    fun renameChannel(userId: Int, guildId: Int, channelId: Int, name: String): Boolean {
+        return if (isOwner(userId, guildId)) {
+            guildChannelService.editChannel(channelId, guildId, name)
+        } else {
+            false
+        }
+    }
+
     fun renameGuild(userId: Int, guildId: Int, name: String): Boolean {
         return if (isOwner(userId, guildId)) {
             guildService.renameGuild(guildId, name)
         } else {
             false
         }
+    }
+
+    fun createChannel(guildId: Int, userId: Int, name: String, type: ChannelType, category: Int?): Boolean {
+        if (!isOwner(userId, guildId)) {
+            return false
+        }
+        if (category != null && type == ChannelType.category) {
+            return false
+        }
+
+        database.useTransaction {
+            val ch = channelService.createChannel(type) ?: throw Exception()
+
+            guildChannelService.createChannel(guildId, ch, name) ?: throw Exception()
+
+            if (!guildChannelOrderingService.createChannel(ch, guildId, category)) {
+                throw Exception()
+            }
+        }
+
+        return true
+    }
+
+    fun moveChannel(channelId: Int, userId: Int, guildId: Int, position: Int, category: Int?): Boolean {
+        if (!isOwner(userId, guildId)) {
+            return false
+        }
+        val ch = guildChannelService.getChannel(channelId, guildId) ?: return false
+
+        if (ch.channel.type == ChannelType.category) {
+            guildChannelOrderingService.moveCategory(channelId, guildId, position)
+        } else {
+            guildChannelOrderingService.moveChannel(channelId, guildId, category, position)
+        }
+
+        return true
     }
 
     fun getChannels(userId: Int, guildId: Int): List<GuildsChannel>? {
@@ -71,6 +122,14 @@ class GuildWrapper(
         }
     }
 
+    fun getChannelsOrdered(userId: Int, guildId: Int): Chans? {
+        if (!isMember(userId, guildId)) {
+            return null
+        }
+
+        return guildChannelOrderingService.getChannels(guildId) ?: Chans(mutableListOf(), mutableListOf())
+    }
+
     fun getChannel(userId: Int, guildId: Int, channelId: Int): GuildsChannel? {
         if (!isMember(userId, guildId)) {
             return null
@@ -81,7 +140,15 @@ class GuildWrapper(
 
     fun deleteChannel(userId: Int, guildId: Int, channelId: Int): Boolean {
         return if (isOwner(userId, guildId)) {
-            channelService.deleteChannel(channelId)
+            database.useTransaction {
+                if (!channelService.deleteChannel(channelId)) {
+                    throw Exception()
+                }
+                if (!guildChannelOrderingService.deleteChannel(channelId, guildId)) {
+                    throw Exception()
+                }
+            }
+            true
         } else {
             false
         }
