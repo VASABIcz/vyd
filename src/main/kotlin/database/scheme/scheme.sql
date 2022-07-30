@@ -6,8 +6,7 @@ create type channel_type as enum ('friends', 'voice', 'text', 'group', 'category
 
 alter type channel_type owner to vasabi;
 
-
-create table users
+create table if not exists users
 (
     id            serial
         constraint users_pk
@@ -19,15 +18,15 @@ create table users
     salt          bytea                               not null
 );
 
-comment on table users is 'table for storing users';
+comment on table users is 'table for storing es';
 
 alter table users
     owner to vasabi;
 
-create unique index "user"
+create unique index if not exists "user"
     on users (name, discriminator);
 
-create table usernames
+create table if not exists usernames
 (
     username      varchar(255) not null
         constraint usernames_pk
@@ -38,7 +37,7 @@ create table usernames
 alter table usernames
     owner to vasabi;
 
-create table channels
+create table if not exists channels
 (
     id            serial
         constraint channels_pk
@@ -50,7 +49,7 @@ create table channels
 alter table channels
     owner to vasabi;
 
-create table friends
+create table if not exists friends
 (
     user1      integer              not null
         constraint friends_users_id_fk
@@ -72,10 +71,10 @@ create table friends
 alter table friends
     owner to vasabi;
 
-create unique index friends_channel_id_uindex
+create unique index if not exists friends_channel_id_uindex
     on friends (channel_id);
 
-create table messages
+create table if not exists messages
 (
     id            serial
         constraint messages_pk
@@ -94,7 +93,7 @@ create table messages
 alter table messages
     owner to vasabi;
 
-create table friend_requests
+create table if not exists friend_requests
 (
     id            integer              default nextval('frined_requests_id_seq'::regclass) not null
         constraint frined_requests_pk
@@ -114,7 +113,7 @@ create table friend_requests
 alter table friend_requests
     owner to vasabi;
 
-create table guilds
+create table if not exists guilds
 (
     id            serial
         constraint guilds_pk
@@ -123,32 +122,34 @@ create table guilds
         constraint guilds_users_id_fk
             references users
             on update cascade on delete cascade,
-    "[timestamp]" timestamp default CURRENT_TIMESTAMP not null
+    "[timestamp]" timestamp default CURRENT_TIMESTAMP not null,
+    name          varchar(255)                        not null
 );
 
 alter table guilds
     owner to vasabi;
 
-create table guilds_channels
+create table if not exists guilds_channels
 (
-    channel_id    integer                             not null
+    channel_id integer      not null
+        constraint guilds_channels_pk_2
+            primary key
         constraint guilds_channels_channels_id_fk
             references channels
             on update cascade on delete cascade,
-    guild_id      integer                             not null
+    guild_id   integer      not null
         constraint guilds_channels_guilds_id_fk
             references guilds
             on update cascade on delete cascade,
-    name          varchar(255)                        not null,
-    "[timestamp]" timestamp default CURRENT_TIMESTAMP not null,
+    name       varchar(255) not null,
     constraint guilds_channels_pk
-        primary key (guild_id, channel_id)
+        unique (guild_id, channel_id)
 );
 
 alter table guilds_channels
     owner to vasabi;
 
-create table members
+create table if not exists members
 (
     user_id       integer not null
         constraint members_users_id_fk
@@ -166,4 +167,57 @@ create table members
 alter table members
     owner to vasabi;
 
+create table if not exists guild_channel_ordering
+(
+    guild_id integer not null
+        constraint guild_channel_ordering_pk
+            primary key
+        constraint guild_channel_ordering_guilds_id_fk
+            references guilds,
+    channels text    not null
+);
+
+alter table guild_channel_ordering
+    owner to vasabi;
+
+create table if not exists guild_avatars
+(
+    guild_id      integer                             not null
+        constraint guild_avatars_pk
+            primary key
+        constraint guild_avatars_guilds_id_fk
+            references guilds
+            on update cascade on delete cascade,
+    avatar        pg_largeobject                      not null,
+    "[timestamp]" timestamp default CURRENT_TIMESTAMP not null
+);
+
+alter table guild_avatars
+    owner to vasabi;
+
+create table if not exists user_avatars
+(
+    user_id       integer                             not null
+        constraint table_name_pk
+            primary key
+        constraint table_name_users_id_fk
+            references users
+            on update cascade on delete cascade,
+    avatar        bytea                               not null,
+    "[timestamp]" timestamp default CURRENT_TIMESTAMP not null
+);
+
+alter table user_avatars
+    owner to vasabi;
+
+create table if not exists default_avatars
+(
+    id     serial
+        constraint default_avatars_pk
+            primary key,
+    avatar bytea not null
+);
+
+alter table default_avatars
+    owner to vasabi;
 
