@@ -3,9 +3,6 @@ import api.configuration.configureCallLogging
 import api.configuration.configureCors
 import api.configuration.configureMetrics
 import api.configuration.configureNegotiation
-import auth.hash.SHA256HashingService
-import auth.token.JwtService
-import auth.token.TokenConfig
 import database.servicies.avatars.DatabaseAvatarsService
 import database.servicies.avatars.DatabaseDefaultAvatarService
 import database.servicies.channels.DatabaseChannelService
@@ -13,6 +10,7 @@ import database.servicies.friendRequests.DatabaseFriendRequestService
 import database.servicies.friends.DatabaseFriendService
 import database.servicies.guildChannels.DatabaseGuildChannelOrderingService
 import database.servicies.guilds.DatabaseGuildChannelService
+import database.servicies.guilds.DatabaseGuildInviteService
 import database.servicies.guilds.DatabaseGuildMemberService
 import database.servicies.guilds.DatabaseGuildService
 import database.servicies.messages.DatabaseMessageService
@@ -25,6 +23,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
 import org.ktorm.support.postgresql.PostgreSqlDialect
+import utils.hash.SHA256HashingService
+import utils.random.BasicRandomStringService
+import utils.token.JwtService
+import utils.token.TokenConfig
 import wrapers.*
 
 
@@ -57,6 +59,8 @@ fun main() {
         val defaultAvatarService = DatabaseDefaultAvatarService(database)
         val avatarWrapper = AvatarWrapper(avatarService, defaultAvatarService)
         val guildChannelOrderingService = DatabaseGuildChannelOrderingService(database, guildChannelService)
+        val guildInviteService = DatabaseGuildInviteService(database)
+        val randomStringService = BasicRandomStringService()
 
         val config = TokenConfig(
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
@@ -77,7 +81,9 @@ fun main() {
             guildChannelService,
             channelService,
             messageService,
-            guildChannelOrderingService
+            guildChannelOrderingService,
+            guildInviteService,
+            randomStringService
         )
 
         routing {

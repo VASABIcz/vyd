@@ -1,11 +1,11 @@
 package wrapers
 
-import auth.hash.HashingService
-import auth.hash.SaltedHash
-import auth.token.TokenClaim
-import auth.token.TokenConfig
-import auth.token.TokenService
 import database.servicies.users.UserService
+import utils.hash.HashingService
+import utils.hash.SaltedHash
+import utils.token.TokenClaim
+import utils.token.TokenConfig
+import utils.token.TokenService
 
 class HashWrapper(
     private val hashingService: HashingService,

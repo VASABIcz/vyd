@@ -1,12 +1,12 @@
 import api.configuration.configureNegotiation
 import api.configureSecurity
-import auth.token.TokenConfig
 import database.servicies.users.UserService
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
+import utils.token.TokenConfig
 
 
 class UserTests {

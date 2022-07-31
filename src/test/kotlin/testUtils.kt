@@ -1,4 +1,3 @@
-import auth.hash.SaltedHash
 import database.servicies.channels.Channel
 import database.servicies.channels.ChannelService
 import database.servicies.channels.ChannelType
@@ -8,6 +7,7 @@ import database.servicies.messages.MessageService
 import database.servicies.usernames.UsernameService
 import database.servicies.users.User
 import database.servicies.users.UserService
+import utils.hash.SaltedHash
 import java.time.Instant
 
 data class TestingUser(

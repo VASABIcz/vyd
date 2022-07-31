@@ -1,6 +1,5 @@
 package database.servicies.users
 
-import auth.hash.SaltedHash
 import io.ktor.server.auth.jwt.*
 import org.ktorm.database.Database
 import org.ktorm.dsl.and
@@ -8,6 +7,7 @@ import org.ktorm.dsl.eq
 import org.ktorm.dsl.insertAndGenerateKey
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
+import utils.hash.SaltedHash
 
 class DatabaseUserService(private val database: Database) : UserService {
     private val users get() = database.sequenceOf(DatabaseUsers)

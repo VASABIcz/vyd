@@ -1,4 +1,4 @@
-package auth.hash
+package utils.hash
 
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils

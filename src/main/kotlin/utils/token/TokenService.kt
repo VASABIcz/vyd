@@ -1,4 +1,4 @@
-package auth.token
+package utils.token
 
 interface TokenService {
     fun generate(

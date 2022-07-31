@@ -1,8 +1,8 @@
-package auth.token
+package utils.token
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import java.util.Date
+import java.util.*
 
 class JwtService: TokenService {
     override fun generate(config: TokenConfig, vararg claims: TokenClaim): String {

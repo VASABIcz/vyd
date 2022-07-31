@@ -1,9 +1,9 @@
 package wrapers
 
-import auth.hash.HashingService
 import database.servicies.usernames.UsernameService
 import database.servicies.users.UserService
 import org.ktorm.database.Database
+import utils.hash.HashingService
 
 class UserWrapper(
     private val database: Database,

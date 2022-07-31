@@ -1,6 +1,6 @@
 package database.servicies.users
 
-import auth.hash.SaltedHash
+import utils.hash.SaltedHash
 
 interface UserService {
     fun createUser(username: String, hash: SaltedHash, discriminator: String): Int?

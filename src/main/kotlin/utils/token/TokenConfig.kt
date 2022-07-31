@@ -1,4 +1,4 @@
-package auth.token
+package utils.token
 
 data class TokenConfig(
     val issuer: String,

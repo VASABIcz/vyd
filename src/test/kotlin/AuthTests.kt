@@ -1,10 +1,5 @@
 import api.configuration.configureNegotiation
 import api.configureSecurity
-import auth.hash.HashingService
-import auth.hash.SHA256HashingService
-import auth.token.JwtService
-import auth.token.TokenConfig
-import auth.token.TokenService
 import data.requests.SigninUserId
 import data.requests.SigninUsername
 import data.requests.SignupCredentials
@@ -19,6 +14,11 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Test
 import org.ktorm.database.Database
+import utils.hash.HashingService
+import utils.hash.SHA256HashingService
+import utils.token.JwtService
+import utils.token.TokenConfig
+import utils.token.TokenService
 import wrapers.HashWrapper
 import wrapers.UserWrapper
 import java.time.Instant

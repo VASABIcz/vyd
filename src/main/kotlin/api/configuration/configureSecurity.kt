@@ -1,11 +1,11 @@
 package api
 
-import auth.token.TokenConfig
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import utils.token.TokenConfig
 
 fun Application.configureSecurity(config: TokenConfig) {
     authentication {
