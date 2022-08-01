@@ -32,11 +32,11 @@ class AvatarWrapper(
         }
     }
 
-    fun getGuildAvatar(id: Int): ByteArray {
-        return avatarsService.getGuildAvatar(id) ?: defaultAvatarService.getAvatar(1)!!
+    suspend fun getGuildAvatar(id: Int): ByteArray = withContext(Dispatchers.IO) {
+        return@withContext avatarsService.getGuildAvatar(id) ?: defaultAvatarService.getAvatar(1)!!
     }
 
-    fun getUserAvatar(id: Int): ByteArray {
-        return avatarsService.getUserAvatar(id) ?: defaultAvatarService.getAvatar(1)!!
+    suspend fun getUserAvatar(id: Int): ByteArray = withContext(Dispatchers.IO) {
+        return@withContext avatarsService.getUserAvatar(id) ?: defaultAvatarService.getAvatar(1)!!
     }
 }
