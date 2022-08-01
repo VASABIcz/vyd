@@ -18,7 +18,22 @@ interface Friend {
     val channel: Channel
     var areFriends: Boolean
 
-    fun toFriendsFriend(me: Int): FriendsFriend
+    fun toFriendsFriend(me: Int): FriendsFriend {
+        return FriendsFriend(
+            if (user1.id != me) user1.toUsersUser() else user2.toUsersUser(),
+            channel.id,
+            channel.timestamp.toEpochMilli(),
+            areFriends
+        )
+    }
+
+    fun friend(me: Int): User {
+        return if (user1.id == me) {
+            user2
+        } else {
+            user1
+        }
+    }
 }
 
 interface DatabaseFriend : Entity<DatabaseFriend>, Friend {
@@ -28,15 +43,6 @@ interface DatabaseFriend : Entity<DatabaseFriend>, Friend {
     override val user2: DatabaseUser
     override val channel: DatabaseChannel
     override var areFriends: Boolean
-
-    override fun toFriendsFriend(me: Int): FriendsFriend {
-        return FriendsFriend(
-            if (user1.id != me) user1.toUsersUser() else user2.toUsersUser(),
-            channel.id,
-            channel.timestamp.toEpochMilli(),
-            areFriends
-        )
-    }
 }
 
 object DatabaseFriends : Table<DatabaseFriend>("friends") {
