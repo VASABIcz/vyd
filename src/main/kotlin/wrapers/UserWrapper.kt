@@ -21,7 +21,7 @@ class UserWrapper(
         return !(username.isBlank() || username.contains(" "))
     }
 
-    fun createUser(username: String, password: String): Int? {
+    suspend fun createUser(username: String, password: String): Int? {
         if (!isValidPassword(password) || !isValidUsername(username)) {
             return null
         }

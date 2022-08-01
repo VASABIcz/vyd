@@ -5,17 +5,19 @@ import api.configuration.configureMetrics
 import api.configuration.configureNegotiation
 import database.servicies.avatars.DatabaseAvatarsService
 import database.servicies.avatars.DatabaseDefaultAvatarService
+import database.servicies.avatars.EventAvatarService
 import database.servicies.channels.DatabaseChannelService
 import database.servicies.friendRequests.DatabaseFriendRequestService
+import database.servicies.friendRequests.EventFriendRequestService
 import database.servicies.friends.DatabaseFriendService
+import database.servicies.friends.EventFriendService
 import database.servicies.guildChannels.DatabaseGuildChannelOrderingService
-import database.servicies.guilds.DatabaseGuildChannelService
-import database.servicies.guilds.DatabaseGuildInviteService
-import database.servicies.guilds.DatabaseGuildMemberService
-import database.servicies.guilds.DatabaseGuildService
+import database.servicies.guildChannels.EventGuildChannelOrderingService
+import database.servicies.guilds.*
 import database.servicies.messages.DatabaseMessageService
 import database.servicies.usernames.DatabaseUsernameService
 import database.servicies.users.DatabaseUserService
+import database.servicies.users.EventUserService
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -27,6 +29,10 @@ import utils.hash.SHA256HashingService
 import utils.random.BasicRandomStringService
 import utils.token.JwtService
 import utils.token.TokenConfig
+import websockets.DispatcherService
+import websockets.RedisEventDispatcher
+import websockets.gateway.configureWebsockets
+import websockets.gateway.gateway
 import wrapers.*
 
 
@@ -57,10 +63,21 @@ fun main() {
         val messageService = DatabaseMessageService(database)
         val avatarService = DatabaseAvatarsService(database)
         val defaultAvatarService = DatabaseDefaultAvatarService(database)
-        val avatarWrapper = AvatarWrapper(avatarService, defaultAvatarService)
         val guildChannelOrderingService = DatabaseGuildChannelOrderingService(database, guildChannelService)
         val guildInviteService = DatabaseGuildInviteService(database)
         val randomStringService = BasicRandomStringService()
+
+        val eventDispatcher = RedisEventDispatcher(System.getenv("redis_host"))
+        val dispatcherService = DispatcherService(eventDispatcher)
+
+        val eventUserService = EventUserService(userService, dispatcherService)
+        val eventGuildService = EventGuildService(guildService, dispatcherService)
+        val eventMemberService = EventGuildMemberService(guildMemberService, dispatcherService)
+        val eventFriendService = EventFriendService(friendService, dispatcherService)
+        val eventAvatarService = EventAvatarService(avatarService, dispatcherService)
+        val eventFriendRequestService = EventFriendRequestService(friendRequestService, dispatcherService)
+        val eventGuildOrdering = EventGuildChannelOrderingService(guildChannelOrderingService, dispatcherService)
+
 
         val config = TokenConfig(
             issuer = "http://${System.getenv("host")}:${System.getenv("port").toInt()}",
@@ -70,21 +87,23 @@ fun main() {
             realm = System.getenv("realm") // FIXME not sure about this
         )
 
-        val friendRequestWrapper = FriendRequestWrapper(database, friendRequestService, friendService)
-        val friendWrapper = FriendWrapper(friendService, messageService)
-        val userWrapper = UserWrapper(database, userService, usernameService, hashingService)
-        val hashWrapper = HashWrapper(hashingService, userService, tokenService, config)
+        val friendRequestWrapper = FriendRequestWrapper(database, eventFriendRequestService, eventFriendService)
+        val friendWrapper = FriendWrapper(eventFriendService, messageService, dispatcherService)
+        val userWrapper = UserWrapper(database, eventUserService, usernameService, hashingService)
+        val hashWrapper = HashWrapper(hashingService, eventUserService, tokenService, config)
         val guildWrapper = GuildWrapper(
             database,
-            guildService,
-            guildMemberService,
+            eventGuildService,
+            eventMemberService,
             guildChannelService,
             channelService,
             messageService,
-            guildChannelOrderingService,
+            eventGuildOrdering,
             guildInviteService,
-            randomStringService
+            randomStringService,
+            dispatcherService
         )
+        val avatarWrapper = AvatarWrapper(eventAvatarService, defaultAvatarService)
 
         routing {
             get("/") {
@@ -102,5 +121,7 @@ fun main() {
         users(userService, avatarWrapper)
         guilds(guildMemberService, guildWrapper)
         friendRequests(friendRequestService, friendRequestWrapper)
+        configureWebsockets()
+        gateway(guildMemberService, friendService)
     }.start(wait = true)
 }

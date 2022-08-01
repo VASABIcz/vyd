@@ -63,7 +63,7 @@ data class PartialTestingMessage(
 class TestUserService(val users: MutableList<User>) : UserService {
     var ids = 0
 
-    override fun createUser(username: String, hash: SaltedHash, discriminator: String): Int {
+    override suspend fun createUser(username: String, hash: SaltedHash, discriminator: String): Int {
         println(users)
         val id = ids++
         users.add(
@@ -80,21 +80,21 @@ class TestUserService(val users: MutableList<User>) : UserService {
         return id
     }
 
-    override fun getUser(username: String, discriminator: String): User? {
+    override suspend fun getUser(username: String, discriminator: String): User? {
         println(users)
         return users.find {
             it.name == username && it.discriminator == discriminator
         }
     }
 
-    override fun getUser(id: Int): User? {
+    override suspend fun getUser(id: Int): User? {
         println(users)
         return users.find {
             it.id == id
         }
     }
 
-    override fun deleteUser(id: Int): Boolean {
+    override suspend fun deleteUser(id: Int): Boolean {
         println(users)
         users.forEachIndexed { index, user ->
             if (user.id == id) {
@@ -134,13 +134,13 @@ class TestUsernameService : UsernameService {
 
 class TestGuildService(val guilds: MutableList<Guild>, val userService: UserService) : GuildService {
     var ids = 0
-    override fun createGuild(owner: Int, name: String): Int {
+    override suspend fun createGuild(owner: Int, name: String): Int {
         val id = ids++
         guilds.add(TestingGuild(id, name, userService.getUser(owner)!!, Instant.now()))
         return id
     }
 
-    override fun deleteGuild(id: Int): Boolean {
+    override suspend fun deleteGuild(id: Int): Boolean {
         guilds.forEachIndexed { index, guild ->
             if (guild.id == id) {
                 guilds.removeAt(index)
@@ -150,7 +150,7 @@ class TestGuildService(val guilds: MutableList<Guild>, val userService: UserServ
         return false
     }
 
-    override fun editGuild(id: Int, name: String): Boolean { // TODO ??????
+    override suspend fun editGuild(id: Int, name: String): Boolean { // TODO ??????
         guilds.forEachIndexed { index, guild ->
             if (guild.id == id) {
                 guilds[index].name = name
@@ -160,13 +160,13 @@ class TestGuildService(val guilds: MutableList<Guild>, val userService: UserServ
         return false
     }
 
-    override fun getGuild(id: Int): Guild? {
+    override suspend fun getGuild(id: Int): Guild? {
         return guilds.find {
             it.id == id
         }
     }
 
-    override fun renameGuild(id: Int, name: String): Boolean {
+    override suspend fun renameGuild(id: Int, name: String): Boolean {
         guilds.forEachIndexed { index, guild ->
             if (guild.id == id) {
                 guilds[index].name = name
@@ -181,7 +181,7 @@ class TestGuildService(val guilds: MutableList<Guild>, val userService: UserServ
 class TestGuildMemberService(val userService: UserService, val guildService: GuildService) : GuildMemberService {
     val members = HashMap<Guild, MutableList<GuildMember>>()
 
-    override fun joinGuild(user: Int, guild: Int): Boolean {
+    override suspend fun joinGuild(user: Int, guild: Int): Boolean {
         val user = userService.getUser(user) ?: return false
         val guild = guildService.getGuild(guild) ?: return false
 
@@ -189,7 +189,7 @@ class TestGuildMemberService(val userService: UserService, val guildService: Gui
         return true
     }
 
-    override fun leaveGuild(user: Int, guild: Int): Boolean {
+    override suspend fun leaveGuild(user: Int, guild: Int): Boolean {
         val user = userService.getUser(user) ?: return false
         val guild = guildService.getGuild(guild) ?: return false
 
@@ -204,7 +204,7 @@ class TestGuildMemberService(val userService: UserService, val guildService: Gui
         return false
     }
 
-    override fun changeNick(user: Int, guild: Int, nick: String): Boolean {
+    override suspend fun changeNick(user: Int, guild: Int, nick: String): Boolean {
         val user = userService.getUser(user) ?: return false
         val guild = guildService.getGuild(guild) ?: return false
 
@@ -219,7 +219,7 @@ class TestGuildMemberService(val userService: UserService, val guildService: Gui
         return false
     }
 
-    override fun getMember(user: Int, guild: Int): GuildMember? {
+    override suspend fun getMember(user: Int, guild: Int): GuildMember? {
         val user = userService.getUser(user) ?: return null
         val guild = guildService.getGuild(guild) ?: return null
 
@@ -229,13 +229,13 @@ class TestGuildMemberService(val userService: UserService, val guildService: Gui
         }
     }
 
-    override fun getMembers(guild: Int, amount: Int, offset: Int): List<GuildMember> {
+    override suspend fun getMembers(guild: Int, amount: Int, offset: Int): List<GuildMember> {
         val guild = guildService.getGuild(guild) ?: return emptyList()
 
         return members[guild] ?: return emptyList()
     }
 
-    override fun getGuilds(user: Int): List<GuildMember> {
+    override suspend fun getGuilds(user: Int): List<GuildMember> {
         val guilds = emptyList<GuildMember>().toMutableList()
 
         for ((_, mems) in members) {
@@ -257,7 +257,7 @@ class TestingGuildChannelService(val guildService: GuildService, val channelServ
         TODO("Not yet implemented")
     }
 
-    override fun editChannel(id: Int, guild: Int, name: String): Boolean {
+    override suspend fun editChannel(id: Int, guild: Int, name: String): Boolean {
         channelService.getChannel(id) ?: channels.remove(id).also { return false }
 
         val pair = channels[id] ?: return false
@@ -266,7 +266,7 @@ class TestingGuildChannelService(val guildService: GuildService, val channelServ
         return true
     }
 
-    override fun getChannels(guild: Int): List<GuildChannel> {
+    override suspend fun getChannels(guild: Int): List<GuildChannel> {
         val chs = emptyList<GuildChannel>().toMutableList()
 
         for ((channel, pair) in channels) {
@@ -279,7 +279,7 @@ class TestingGuildChannelService(val guildService: GuildService, val channelServ
         return chs
     }
 
-    override fun getChannel(id: Int, guild: Int): GuildChannel? {
+    override suspend fun getChannel(id: Int, guild: Int): GuildChannel? {
         for ((channel, pair) in channels) {
             if (pair.second == guild) {
                 val g = guildService.getGuild(pair.second) ?: continue

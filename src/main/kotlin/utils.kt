@@ -1,4 +1,24 @@
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.math.pow
+
+suspend fun Boolean.ifLaunch(fn: suspend () -> Unit): Boolean {
+    println(this)
+    if (this) {
+        CoroutineScope(Dispatchers.IO).launch {
+            fn()
+        }
+    }
+    return this
+}
+
+inline fun<T> measureTimeMillis(text: String,function: () -> Unit){
+    val startTime = System.currentTimeMillis()
+    function()
+    val endTime = System.currentTimeMillis()
+    println("$text took ${endTime-startTime} ms")
+}
 
 fun base10to36(number: Int): String {
     var number = number

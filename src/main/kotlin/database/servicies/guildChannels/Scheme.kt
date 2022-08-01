@@ -13,7 +13,7 @@ interface GuildChannelOrdering {
     val guild: Guild
     val channels: String
 
-    fun parse(channelService: GuildChannelService, guild: Int): Chans {
+    suspend fun parse(channelService: GuildChannelService, guild: Int): Chans {
         return Chans.fromString(channels, channelService, guild)
     }
 }
