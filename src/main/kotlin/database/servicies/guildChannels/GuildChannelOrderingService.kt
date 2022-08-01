@@ -4,6 +4,10 @@ import data.responses.GuildsCategory
 import data.responses.GuildsChannels
 import database.servicies.guilds.GuildChannel
 import database.servicies.guilds.GuildChannelService
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 
 
 data class Category(val channel: GuildChannel, val channels: MutableList<GuildChannel>) {
@@ -13,6 +17,8 @@ data class Category(val channel: GuildChannel, val channels: MutableList<GuildCh
         })
     }
 }
+
+data class MetaCategory(val channel: Int, val channels: MutableList<Int>)
 
 data class Chans(val categories: MutableList<Category>, val noCategory: MutableList<GuildChannel>) {
     fun toGuildsChannels(): GuildsChannels {
@@ -24,64 +30,84 @@ data class Chans(val categories: MutableList<Category>, val noCategory: MutableL
     }
 
     companion object {
-        fun fromString(str: String, channelService: GuildChannelService, guild: Int): Chans {
-            var buf = ""
-            val noCategory = emptyList<GuildChannel>().toMutableList()
-            val categories = emptyList<Category>().toMutableList()
-            var currentCategory: String? = null
+        suspend fun fromString(str: String, channelService: GuildChannelService, guild: Int): Chans =
+            withContext(Dispatchers.IO) {
+                // TODO rewrite
+                // reponse time 1s 700-800 ms just this :)
+                // parse just metadata
+                // then currently query database
+                var buf = ""
+                val noCategory = emptyList<GuildChannel>().toMutableList()
+                val categories = emptyList<Category>().toMutableList()
 
-            for (c in str) {
-                when (c) {
-                    ',' -> {
-                        if (buf.isNotBlank()) {
-                            if (currentCategory == null) {
-                                channelService.getChannel(buf.toInt(), guild)?.also {
-                                    noCategory.add(it)
-                                }
-                            } else {
-                                channelService.getChannel(buf.toInt(), guild)?.also {
-                                    categories.find {
-                                        it.channel.channel.id == currentCategory!!.toInt()
-                                    }?.channels?.add(it)
+                val metaNoCategory = emptyList<Int>().toMutableList()
+                val metaCategories = emptyList<MetaCategory>().toMutableList()
+
+                var isCategory = false
+                var currentCategoryIndex = 0
+
+                for (c in str) {
+                    when (c) {
+                        ',' -> {
+                            if (buf.isNotBlank()) {
+                                if (!isCategory) {
+                                    metaNoCategory.add(buf.toInt())
+                                } else {
+                                    metaCategories[currentCategoryIndex].channels.add(buf.toInt())
                                 }
                             }
-                        }
                         buf = ""
                     }
 
                     '(' -> {
-                        currentCategory = buf
-                        channelService.getChannel(buf.toInt(), guild)?.also {
-                            categories.add(Category(it, mutableListOf()))
-                        }
+                        isCategory = true
+                        metaCategories.add(MetaCategory(buf.toInt(), mutableListOf()))
+                        currentCategoryIndex++
                         buf = ""
                     }
 
                     ')' -> {
                         if (buf.isNotBlank()) {
-                            if (currentCategory == null) {
-                                channelService.getChannel(buf.toInt(), guild)?.also {
-                                    noCategory.add(it)
-                                }
+                            if (!isCategory) {
+                                metaNoCategory.add(buf.toInt())
                             } else {
-                                channelService.getChannel(buf.toInt(), guild)?.also {
-                                    categories.find {
-                                        it.channel.channel.id == currentCategory!!.toInt()
-                                    }?.channels?.add(it)
-                                }
+                                metaCategories[currentCategoryIndex].channels.add(buf.toInt())
                             }
                         }
 
-                        currentCategory = null
+                        isCategory = false
                         buf = ""
                     }
 
-                    else -> {
-                        buf += c
+                        else -> {
+                            buf += c
+                        }
                     }
                 }
-            }
-            return Chans(categories, noCategory)
+                val toAwait = async {
+                    channelService.getChannels(guild, *metaNoCategory.toIntArray())
+                }
+                val toAwait2 = mutableListOf<Deferred<List<GuildChannel>>>()
+                for (mc in metaCategories) {
+                    toAwait2.add(async {
+                        channelService.getChannels(guild, mc.channel, *mc.channels.toIntArray())
+                    })
+                }
+
+                // FIXME this will crash with big guilds :)
+                // TODO or just dont do this :D
+                noCategory.addAll(toAwait.await())
+                categories.addAll(
+                    toAwait2.map {
+                        val cs = it.await()
+                        Category(
+                            cs[0],
+                            cs.drop(1) as MutableList<GuildChannel>
+                        )
+                    }
+                )
+
+                return@withContext Chans(categories, noCategory)
         }
     }
 
@@ -151,7 +177,7 @@ data class Chans(val categories: MutableList<Category>, val noCategory: MutableL
         return true
     }
 
-    fun addChannel(id: Int, channelService: GuildChannelService, guild: Int, category: Int?): Boolean {
+    suspend fun addChannel(id: Int, channelService: GuildChannelService, guild: Int, category: Int?): Boolean {
         if (category == null) {
             channelService.getChannel(id, guild)?.also {
                 noCategory.add(it)
@@ -171,7 +197,7 @@ data class Chans(val categories: MutableList<Category>, val noCategory: MutableL
         }
     }
 
-    fun addCategory(id: Int, channelService: GuildChannelService, guild: Int): Boolean {
+    suspend fun addCategory(id: Int, channelService: GuildChannelService, guild: Int): Boolean {
         channelService.getChannel(id, guild)?.also {
             categories.add(Category(it, mutableListOf()))
         } ?: return false
@@ -200,21 +226,27 @@ data class Chans(val categories: MutableList<Category>, val noCategory: MutableL
 }
 
 interface GuildChannelOrderingService {
-    fun getChannels(guild: Int): Chans?
+    suspend fun getChannels(guild: Int): Chans?
 
-    fun moveCategory(channel: Int, guild: Int, position: Int): Boolean
+    suspend fun moveCategory(channel: Int, guild: Int, position: Int, a: GuildChannelOrderingService): Boolean
 
-    fun deleteCategory(channel: Int, guild: Int): Boolean
+    suspend fun deleteCategory(channel: Int, guild: Int, a: GuildChannelOrderingService): Boolean
 
-    fun createCategory(channel: Int, guild: Int): Boolean
+    suspend fun createCategory(channel: Int, guild: Int, a: GuildChannelOrderingService): Boolean
 
-    fun createChannel(channel: Int, guild: Int, category: Int?): Boolean
+    suspend fun createChannel(channel: Int, guild: Int, category: Int?, a: GuildChannelOrderingService): Boolean
 
-    fun deleteChannel(channel: Int, guild: Int): Boolean
+    suspend fun deleteChannel(channel: Int, guild: Int, a: GuildChannelOrderingService): Boolean
 
-    fun moveChannel(channel: Int, guild: Int, category: Int?, position: Int): Boolean
+    suspend fun moveChannel(
+        channel: Int,
+        guild: Int,
+        category: Int?,
+        position: Int,
+        a: GuildChannelOrderingService
+    ): Boolean
 
-    fun update(guild: Int, channels: String): Boolean
+    suspend fun update(guild: Int, channels: Chans): Boolean
 
-    fun createRecord(guild: Int): Boolean
+    suspend fun createRecord(guild: Int): Boolean
 }
