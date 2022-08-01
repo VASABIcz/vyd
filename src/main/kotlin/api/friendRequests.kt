@@ -43,7 +43,7 @@ fun Application.friendRequests(
 
                         val me = call.principal<JWTPrincipal>()!!.userId!!
 
-                        if (friendRequestService.createRequest(me, userId!!)) {
+                        if (friendRequestService.createRequest(me, userId!!) != null) {
                             call.success()
                         } else {
                             call.serverIssue()
