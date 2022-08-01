@@ -1,9 +1,11 @@
 package database.servicies.friendRequests
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ktorm.database.Database
 import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
-import org.ktorm.dsl.insert
+import org.ktorm.dsl.insertAndGenerateKey
 import org.ktorm.dsl.neq
 import org.ktorm.entity.filter
 import org.ktorm.entity.find
@@ -14,34 +16,35 @@ class DatabaseFriendRequestService(private val database: Database) :
     FriendRequestService {
     private val requests get() = database.sequenceOf(DatabaseFriendRequests)
 
-    override fun createRequest(requester: Int, receiver: Int): Boolean {
+    override suspend fun createRequest(requester: Int, receiver: Int): Int? = withContext(Dispatchers.IO) {
         if (requester == receiver) {
-            return false
+            return@withContext null
         }
 
         val request = getRequestState(requester, receiver)
-        return if (request?.state == FriendRequestState.accepted || request?.state == FriendRequestState.declined || request == null) {
-            database.insert(DatabaseFriendRequests) {
+        return@withContext if (request?.state == FriendRequestState.accepted || request?.state == FriendRequestState.declined || request == null) {
+            return@withContext database.insertAndGenerateKey(DatabaseFriendRequests) {
                 set(DatabaseFriendRequests.requester, requester)
                 set(DatabaseFriendRequests.receiver, receiver)
                 set(DatabaseFriendRequests.state, FriendRequestState.pending)
-            } != 0
+            } as Int?
         } else {
-            false
+            null
         }
     }
 
-    override fun getRequestState(requester: Int, receiver: Int): DatabaseFriendRequest? {
-        return requests.find {
-            (DatabaseFriendRequests.state eq FriendRequestState.pending) and (DatabaseFriendRequests.requester eq requester) and (DatabaseFriendRequests.receiver eq receiver)
-        }
-            ?: requests.find {
-                (DatabaseFriendRequests.state neq FriendRequestState.pending) and (DatabaseFriendRequests.requester eq requester) and (DatabaseFriendRequests.receiver eq receiver)
+    override suspend fun getRequestState(requester: Int, receiver: Int): DatabaseFriendRequest? =
+        withContext(Dispatchers.IO) {
+            return@withContext requests.find {
+                (DatabaseFriendRequests.state eq FriendRequestState.pending) and (DatabaseFriendRequests.requester eq requester) and (DatabaseFriendRequests.receiver eq receiver)
             }
-    }
+                ?: requests.find {
+                    (DatabaseFriendRequests.state neq FriendRequestState.pending) and (DatabaseFriendRequests.requester eq requester) and (DatabaseFriendRequests.receiver eq receiver)
+                }
+        }
 
-    override fun getRequestState(id: Int): DatabaseFriendRequest? {
-        return requests.find {
+    override suspend fun getRequestState(id: Int): DatabaseFriendRequest? = withContext(Dispatchers.IO) {
+        return@withContext requests.find {
             DatabaseFriendRequests.id eq id
         }
     }
@@ -64,19 +67,20 @@ class DatabaseFriendRequestService(private val database: Database) :
     //     }
     // }
 
-    override fun changePendingRequestState(id: Int, state: FriendRequestState, receiver: Int): Boolean {
-        val request = getRequestState(id) ?: return false
+    override suspend fun changePendingRequestState(id: Int, state: FriendRequestState, receiver: Int): Boolean =
+        withContext(Dispatchers.IO) {
+            val request = getRequestState(id) ?: return@withContext false
 
-        return if (request.state == FriendRequestState.pending && request.receiver.id == receiver) {
-            request.state = state
-            return request.flushChanges() != 0
-        } else {
-            false
+            return@withContext if (request.state == FriendRequestState.pending && request.receiver.id == receiver) {
+                request.state = state
+                return@withContext request.flushChanges() != 0
+            } else {
+                false
+            }
         }
-    }
 
-    override fun getPendingRequests(receiver: Int): List<DatabaseFriendRequest> {
-        return requests.filter {
+    override suspend fun getPendingRequests(receiver: Int): List<DatabaseFriendRequest> = withContext(Dispatchers.IO) {
+        return@withContext requests.filter {
             (DatabaseFriendRequests.receiver eq receiver) and (DatabaseFriendRequests.state eq FriendRequestState.pending)
         }.toList()
     }

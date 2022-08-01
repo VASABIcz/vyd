@@ -1,6 +1,8 @@
 package database.servicies.guildChannels
 
 import database.servicies.guilds.GuildChannelService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ktorm.database.Database
 import org.ktorm.dsl.eq
 import org.ktorm.entity.find
@@ -14,80 +16,104 @@ class DatabaseGuildChannelOrderingService(
     private val ordering = database.sequenceOf(DatabaseGuildChannelOrderings)
     // this is more like wrapper than service
 
-    override fun getChannels(guild: Int): Chans? {
+    override suspend fun getChannels(guild: Int): Chans? = withContext(Dispatchers.IO) {
         val chs = ordering.find {
             it.guild_id eq guild
-        } ?: return null
-        return chs.parse(guildChannelService, guild)
+        } ?: return@withContext null
+        return@withContext chs.parse(guildChannelService, guild)
     }
 
-    override fun moveCategory(channel: Int, guild: Int, position: Int): Boolean {
+    override suspend fun moveCategory(
+        channel: Int,
+        guild: Int,
+        position: Int,
+        a: GuildChannelOrderingService
+    ): Boolean = withContext(Dispatchers.IO) {
         val chs = ordering.find {
             it.guild_id eq guild
-        } ?: return false
+        } ?: return@withContext false
         val parsed = chs.parse(guildChannelService, guild)
         parsed.moveCategory(channel, position)
-        return update(guild, parsed.toString())
+        return@withContext a.update(guild, parsed)
     }
 
-    override fun deleteCategory(channel: Int, guild: Int): Boolean {
-        val chs = ordering.find {
-            it.guild_id eq guild
-        } ?: return false
-        val parsed = chs.parse(guildChannelService, guild)
-        parsed.removeCategory(channel)
-        return update(guild, parsed.toString())
-    }
+    override suspend fun deleteCategory(channel: Int, guild: Int, a: GuildChannelOrderingService): Boolean =
+        withContext(Dispatchers.IO) {
+            val chs = ordering.find {
+                it.guild_id eq guild
+            } ?: return@withContext false
+            val parsed = chs.parse(guildChannelService, guild)
+            parsed.removeCategory(channel)
+            return@withContext a.update(guild, parsed)
+        }
 
-    override fun createCategory(channel: Int, guild: Int): Boolean {
-        val chs = ordering.find {
-            it.guild_id eq guild
-        } ?: return false
-        val parsed = chs.parse(guildChannelService, guild)
-        parsed.addCategory(channel, guildChannelService, guild)
-        return update(guild, parsed.toString())
-    }
+    override suspend fun createCategory(channel: Int, guild: Int, a: GuildChannelOrderingService): Boolean =
+        withContext(Dispatchers.IO) {
+            val chs = ordering.find {
+                it.guild_id eq guild
+            } ?: return@withContext false
+            val parsed = chs.parse(guildChannelService, guild)
+            parsed.addCategory(channel, guildChannelService, guild)
+            return@withContext a.update(guild, parsed)
+        }
 
-    override fun createChannel(channel: Int, guild: Int, category: Int?): Boolean {
+    override suspend fun createChannel(
+        channel: Int,
+        guild: Int,
+        category: Int?,
+        a: GuildChannelOrderingService
+    ): Boolean = withContext(Dispatchers.IO) {
         val chs = ordering.find {
             it.guild_id eq guild
-        } ?: return false
+        } ?: return@withContext false
         val parsed = chs.parse(guildChannelService, guild)
         parsed.addChannel(channel, guildChannelService, guild, category)
-        return update(guild, parsed.toString())
+        return@withContext a.update(guild, parsed)
     }
 
-    override fun deleteChannel(channel: Int, guild: Int): Boolean {
-        val chs = ordering.find {
-            it.guild_id eq guild
-        } ?: return false
-        val parsed = chs.parse(guildChannelService, guild)
-        parsed.removeChannel(channel)
-        return update(guild, parsed.toString())
-    }
+    override suspend fun deleteChannel(channel: Int, guild: Int, a: GuildChannelOrderingService): Boolean =
+        withContext(Dispatchers.IO) {
+            val chs = ordering.find {
+                it.guild_id eq guild
+            } ?: return@withContext false
+            val parsed = chs.parse(guildChannelService, guild)
+            parsed.removeChannel(channel)
+            return@withContext a.update(guild, parsed)
+        }
 
-    override fun moveChannel(channel: Int, guild: Int, category: Int?, position: Int): Boolean {
+    override suspend fun moveChannel(
+        channel: Int,
+        guild: Int,
+        category: Int?,
+        position: Int,
+        a: GuildChannelOrderingService
+    ): Boolean = withContext(Dispatchers.IO) {
         val chs = ordering.find {
             it.guild_id eq guild
-        } ?: return false
+        } ?: return@withContext false
         val parsed = chs.parse(guildChannelService, guild)
         parsed.moveChannel(channel, category, position)
-        return update(guild, parsed.toString())
+        return@withContext a.update(guild, parsed)
     }
 
-    override fun update(guild: Int, channels: String): Boolean {
-        return database.insertOrUpdate(DatabaseGuildChannelOrderings) {
+    override suspend fun update(guild: Int, channels: Chans): Boolean = withContext(Dispatchers.IO) {
+        val str = channels.toString()
+        return@withContext database.insertOrUpdate(DatabaseGuildChannelOrderings) {
             set(it.guild_id, guild)
-            set(it.channels, channels)
+            set(it.channels, str)
             onConflict {
-                set(it.channels, channels)
+                set(it.channels, str)
             }
         } != 0
     }
 
-    override fun createRecord(guild: Int): Boolean {
-        return update(guild, "")
+    override suspend fun createRecord(guild: Int): Boolean = withContext(Dispatchers.IO) {
+        return@withContext database.insertOrUpdate(DatabaseGuildChannelOrderings) {
+            set(it.guild_id, guild)
+            set(it.channels, "")
+            onConflict {
+                set(it.channels, "")
+            }
+        } != 0
     }
-
-
 }

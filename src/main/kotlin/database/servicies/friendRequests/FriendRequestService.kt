@@ -1,13 +1,13 @@
 package database.servicies.friendRequests
 
 interface FriendRequestService {
-    fun createRequest(requester: Int, receiver: Int): Boolean
+    suspend fun createRequest(requester: Int, receiver: Int): Int?
 
-    fun getRequestState(requester: Int, receiver: Int): FriendRequest?
+    suspend fun getRequestState(requester: Int, receiver: Int): FriendRequest?
 
-    fun getRequestState(id: Int): FriendRequest?
+    suspend fun getRequestState(id: Int): FriendRequest?
 
-    fun changePendingRequestState(id: Int, state: FriendRequestState, receiver: Int): Boolean
+    suspend fun changePendingRequestState(id: Int, state: FriendRequestState, receiver: Int): Boolean
 
-    fun getPendingRequests(receiver: Int): List<FriendRequest>
+    suspend fun getPendingRequests(receiver: Int): List<FriendRequest>
 }

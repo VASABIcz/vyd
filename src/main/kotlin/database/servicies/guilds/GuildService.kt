@@ -1,13 +1,13 @@
 package database.servicies.guilds
 
 interface GuildService {
-    fun createGuild(owner: Int, name: String): Int?
+    suspend fun createGuild(owner: Int, name: String): Int?
 
-    fun deleteGuild(id: Int): Boolean
+    suspend fun deleteGuild(id: Int): Boolean
 
-    fun editGuild(id: Int, name: String): Boolean
+    suspend fun editGuild(id: Int, name: String): Boolean
 
-    fun getGuild(id: Int): Guild?
+    suspend fun getGuild(id: Int): Guild?
 
-    fun renameGuild(id: Int, name: String): Boolean
+    suspend fun renameGuild(id: Int, name: String): Boolean
 }

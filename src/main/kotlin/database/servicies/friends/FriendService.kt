@@ -3,17 +3,17 @@ package database.servicies.friends
 import database.servicies.messages.Message
 
 interface FriendService {
-    fun addFriend(user1: Int, user2: Int): Boolean
+    suspend fun addFriend(user1: Int, user2: Int): Boolean
 
-    fun removeFriend(user1: Int, user2: Int): Boolean
+    suspend fun removeFriend(user1: Int, user2: Int): Boolean
 
-    fun getFriendship(user1: Int, user2: Int): Friend?
+    suspend fun getFriendship(user1: Int, user2: Int): Friend?
 
-    fun getFriends(user: Int): Set<Friend>
+    suspend fun getFriends(user: Int): Set<Friend>
 
-    fun sendMessage(sender: Int, receiver: Int, content: String): Boolean
+    suspend fun sendMessage(sender: Int, receiver: Int, content: String): Int?
 
-    fun getMessages(
+    suspend fun getMessages(
         user1: Int,
         user2: Int,
         amount: Int = 100,

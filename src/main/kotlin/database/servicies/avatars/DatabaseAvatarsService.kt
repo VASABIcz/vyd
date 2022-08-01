@@ -1,5 +1,7 @@
 package database.servicies.avatars
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ktorm.database.Database
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.insert
@@ -11,28 +13,28 @@ class DatabaseAvatarsService(private val database: Database) : AvatarsService {
     private val guildAvatars = database.sequenceOf(DatabaseGuildImages)
     private val userAvatars = database.sequenceOf(DatabaseUsersImages)
 
-    override fun createGuildAvatar(id: Int, image: ByteArray): Boolean {
-        return database.insert(DatabaseGuildImages) {
+    override suspend fun createGuildAvatar(id: Int, image: ByteArray): Boolean = withContext(Dispatchers.IO) {
+        return@withContext database.insert(DatabaseGuildImages) {
             set(it.image, image)
             set(it.id, id)
         } > 0
     }
 
-    override fun createUserAvatar(id: Int, image: ByteArray): Boolean {
-        return database.insert(DatabaseUsersImages) {
+    override suspend fun createUserAvatar(id: Int, image: ByteArray): Boolean = withContext(Dispatchers.IO) {
+        return@withContext database.insert(DatabaseUsersImages) {
             set(it.image, image)
             set(it.id, id)
         } > 0
     }
 
-    override fun getGuildAvatar(id: Int): ByteArray? {
-        return guildAvatars.find {
+    override suspend fun getGuildAvatar(id: Int): ByteArray? = withContext(Dispatchers.IO) {
+        return@withContext guildAvatars.find {
             it.id eq id
         }?.image
     }
 
-    override fun getUserAvatar(id: Int): ByteArray? {
-        return userAvatars.find {
+    override suspend fun getUserAvatar(id: Int): ByteArray? = withContext(Dispatchers.IO) {
+        return@withContext userAvatars.find {
             it.id eq id
         }?.image
     }

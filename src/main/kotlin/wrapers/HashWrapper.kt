@@ -13,7 +13,7 @@ class HashWrapper(
     private val tokenService: TokenService,
     private val config: TokenConfig
 ) {
-    fun createToken(username: String, discriminator: String, password: String): String? {
+    suspend fun createToken(username: String, discriminator: String, password: String): String? {
         val user = userService.getUser(username, discriminator) ?: return null
         return if (hashingService.verify(
                 password,
@@ -26,7 +26,7 @@ class HashWrapper(
         }
     }
 
-    fun createToken(id: Int, password: String): String? {
+    suspend fun createToken(id: Int, password: String): String? {
         val user = userService.getUser(id) ?: return null
         return if (hashingService.verify(
                 password,

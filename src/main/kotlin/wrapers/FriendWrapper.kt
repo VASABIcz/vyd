@@ -4,12 +4,14 @@ import Config
 import data.responses.MessagesMessage
 import database.servicies.friends.FriendService
 import database.servicies.messages.MessageService
+import websockets.DispatcherService
 
 class FriendWrapper(
     private val friendService: FriendService,
-    private val messageService: MessageService
+    private val messageService: MessageService,
+    private val dispatcher: DispatcherService
 ) {
-    fun getMessages(
+    suspend fun getMessages(
         userId: Int,
         friendId: Int,
         amount: Int? = Config.messageAmountDefault,
@@ -34,7 +36,7 @@ class FriendWrapper(
         }
     }
 
-    fun getMessage(userId: Int, friendId: Int, messageId: Int): MessagesMessage? {
+    suspend fun getMessage(userId: Int, friendId: Int, messageId: Int): MessagesMessage? {
         friendService.getFriendship(userId, friendId) ?: return null
 
         val message = messageService.getMessage(messageId) ?: return null
@@ -46,13 +48,15 @@ class FriendWrapper(
         return message.toMessagesMessage()
     }
 
-    fun sendMessage(userId: Int, friendId: Int, content: String): Boolean {
+    suspend fun sendMessage(userId: Int, friendId: Int, content: String): Boolean {
         val friends = friendService.getFriendship(userId, friendId) ?: return false
 
-        return messageService.createMessage(userId, friends.channel.id, content) != null
+        return messageService.createMessage(userId, friends.channel.id, content)?.also {
+            dispatcher.sendDM(userId, friendId, content)
+        } != null
     }
 
-    fun deleteMessage(userId: Int, friendId: Int, messageId: Int): Boolean {
+    suspend fun deleteMessage(userId: Int, friendId: Int, messageId: Int): Boolean {
         friendService.getFriendship(userId, friendId) ?: return false
 
         val message = messageService.getMessage(messageId) ?: return false
@@ -64,7 +68,7 @@ class FriendWrapper(
         return messageService.deleteMessage(messageId)
     }
 
-    fun editMessage(userId: Int, friendId: Int, messageId: Int, content: String): Boolean {
+    suspend fun editMessage(userId: Int, friendId: Int, messageId: Int, content: String): Boolean {
         friendService.getFriendship(userId, friendId) ?: return false
 
         val message = messageService.getMessage(messageId) ?: return false

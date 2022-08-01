@@ -1,17 +1,17 @@
 package wrapers
 
-import database.servicies.friendRequests.DatabaseFriendRequestService
+import database.servicies.friendRequests.FriendRequestService
 import database.servicies.friendRequests.FriendRequestState
 import database.servicies.friends.FriendService
 import org.ktorm.database.Database
 
 class FriendRequestWrapper(
     private val database: Database,
-    private val friendRequestService: DatabaseFriendRequestService,
+    private val friendRequestService: FriendRequestService,
     private val friendService: FriendService
 ) {
 
-    fun acceptFriendRequest(requestId: Int, user: Int): Boolean {
+    suspend fun acceptFriendRequest(requestId: Int, user: Int): Boolean {
         val request = friendRequestService.getRequestState(requestId) ?: return false
 
         database.useTransaction {
@@ -25,7 +25,7 @@ class FriendRequestWrapper(
         return true
     }
 
-    fun declineFriend(requestId: Int, user: Int): Boolean {
+    suspend fun declineFriend(requestId: Int, user: Int): Boolean {
         if (!friendRequestService.changePendingRequestState(requestId, FriendRequestState.declined, user)) {
             return false
         }

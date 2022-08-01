@@ -3,15 +3,13 @@ package database.servicies.users
 import utils.hash.SaltedHash
 
 interface UserService {
-    fun createUser(username: String, hash: SaltedHash, discriminator: String): Int?
+    suspend fun createUser(username: String, hash: SaltedHash, discriminator: String): Int?
 
-    fun getUser(username: String, discriminator: String): User?
+    suspend fun getUser(username: String, discriminator: String): User?
 
-    fun getUser(id: Int): User?
+    suspend fun getUser(id: Int): User?
 
-    fun deleteUser(id: Int): Boolean
-
-    fun deleteUser(username: String, discriminator: String): Boolean
+    suspend fun deleteUser(id: Int): Boolean
 
     // TODO fun editUser(id: Int, username: String): Boolean
     // TODO fun editUser(username: String, discriminator: String, username: String): Boolean
