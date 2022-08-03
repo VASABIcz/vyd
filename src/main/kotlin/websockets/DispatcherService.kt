@@ -21,6 +21,18 @@ class DispatcherService(private val eventDispatcher: EventDispatcher) {
         return "me:$id"
     }
 
+    private fun guildState(id: Int): String {
+        return "guild:state:$id"
+    }
+
+    private fun meState(id: Int): String {
+        return "me:state:$id"
+    }
+
+    private fun userState(id: Int): String {
+        return "user:state:$id"
+    }
+
     suspend fun userRename(author: Int, name: String) {
         eventDispatcher.dispatch(user(author), UserRename(author, name).encode)
     }
@@ -38,11 +50,11 @@ class DispatcherService(private val eventDispatcher: EventDispatcher) {
     }
 
     suspend fun addFriend(user: Int, friend: Int) {
-        eventDispatcher.dispatch(me(user), AddFriend(friend).encode)
+        eventDispatcher.dispatch(meState(user), AddFriend(friend).encode)
     }
 
     suspend fun removeFriend(user: Int, friend: Int) {
-        eventDispatcher.dispatch(me(user), RemoveFriend(friend).encode)
+        eventDispatcher.dispatch(meState(user), RemoveFriend(friend).encode)
     }
 
     suspend fun sendDM(user: Int, friend: Int, message: String) {
@@ -54,11 +66,11 @@ class DispatcherService(private val eventDispatcher: EventDispatcher) {
     }
 
     suspend fun guildLeave(guild: Int, member: Int) {
-        eventDispatcher.dispatch(guild(guild), GuildMemberLeave(member).encode)
+        eventDispatcher.dispatch(guildState(guild), GuildMemberLeave(member).encode)
     }
 
     suspend fun guildJoin(guild: Int, member: Int) {
-        eventDispatcher.dispatch(guild(guild), GuildMemberJoin(member).encode)
+        eventDispatcher.dispatch(guildState(guild), GuildMemberJoin(member).encode)
     }
 
     suspend fun guildChangeNick(guild: Int, member: Int, nick: String?) {
@@ -66,7 +78,7 @@ class DispatcherService(private val eventDispatcher: EventDispatcher) {
     }
 
     suspend fun deleteGuild(guild: Int) {
-        eventDispatcher.dispatch(guild(guild), GuildDelete().encode)
+        eventDispatcher.dispatch(guildState(guild), GuildDelete(guild).encode)
     }
 
     suspend fun renameGuild(guild: Int, name: String) {
@@ -74,10 +86,10 @@ class DispatcherService(private val eventDispatcher: EventDispatcher) {
     }
 
     suspend fun sendMessage(guild: Int, channel: Int, author: Int, content: String) {
-        eventDispatcher.dispatch(guild(guild), MessageEvent(author, channel, content).encode)
+        eventDispatcher.dispatch(guild(guild), MessageEvent(author, channel, content, EventType.Message).encode)
     }
 
     suspend fun deleteUser(user: Int) {
-        eventDispatcher.dispatch(user(user), UserDelete().encode)
+        eventDispatcher.dispatch(userState(user), UserDelete(user).encode)
     }
 }
