@@ -24,7 +24,14 @@ application {
     dependencies {
         // kotlin orm
         implementation("org.ktorm:ktorm-core:3.5.0")
-        implementation("org.ktorm:ktorm-support-postgresql:3.5.0")
+        // implementation("org.ktorm:ktorm-support-postgresql:3.5.0")
+        implementation("org.ktorm:ktorm-support-mysql:3.5.0")
+        // psql driver
+        implementation("org.postgresql:postgresql:42.4.0")
+        // maria db driver
+        implementation("org.mariadb.jdbc:mariadb-java-client:3.0.7")
+        // hikari
+        implementation("com.zaxxer:HikariCP:5.0.1")
         // webserver
         implementation("io.ktor:ktor-server-core:2.0.2")
         implementation("io.ktor:ktor-server-netty:2.0.2")
@@ -38,8 +45,6 @@ application {
         implementation("io.ktor:ktor-server-websockets:2.0.2")
         // hashing utils
         implementation("commons-codec:commons-codec:1.15")
-        // psql
-        implementation("org.postgresql:postgresql:42.4.0")
         // logging
         implementation("ch.qos.logback:logback-classic:1.2.9")
         // recive conten multiple times

@@ -62,6 +62,7 @@ class GuildWrapper(
     suspend fun createGuild(owner: Int, name: String): Guild? {
         database.useTransaction {
             val guildId = guildService.createGuild(owner, name) ?: throw Throwable("failed to create guild")
+            println("guild id is $guildId $owner")
             if (!guildChannelOrderingService.createRecord(guildId)) {
                 throw Throwable("failed to create channel ordering")
             }
@@ -181,7 +182,8 @@ class GuildWrapper(
         guildId: Int,
         channelId: Int,
         amount: Int? = Config.messageAmountDefault,
-        offset: Int? = 0
+        offset: Int? = 0,
+        id: Int?
     ): List<MessagesMessage>? {
         val isMember = isMember(userId, guildId)
         val isGuildChannel = isGuildChannel(channelId, guildId)
@@ -198,7 +200,7 @@ class GuildWrapper(
         }
         val offset = offset ?: 0
 
-        return messageService.getMessages(channelId, amount, offset).map {
+        return messageService.getMessages(channelId, amount, offset, id).map {
             it.toMessagesMessage()
         }
     }

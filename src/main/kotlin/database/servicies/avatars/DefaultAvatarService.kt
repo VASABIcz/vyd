@@ -1,9 +1,5 @@
 package database.servicies.avatars
 
-interface DefaultAvatarService {
-    fun getAvatar(id: Int): ByteArray?
-
+interface DefaultAvatarService : AvatarService {
     fun createAvatar(avatar: ByteArray): Boolean
-
-    fun setAvatar(id: Int, avatar: ByteArray): Boolean
 }

@@ -38,7 +38,7 @@ interface DatabaseMessage : Entity<DatabaseMessage>, Message {
 
 object DatabaseMessages : Table<DatabaseMessage>("messages") {
     val id = int("id").primaryKey().bindTo { it.id }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
     val content = text("content").bindTo { it.content }
     val author = int("user_id").references(DatabaseUsers) { it.author }
     val channel = int("channel_id").references(DatabaseChannels) { it.channel }

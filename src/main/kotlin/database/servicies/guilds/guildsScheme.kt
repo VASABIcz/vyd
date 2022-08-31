@@ -11,7 +11,10 @@ import database.servicies.users.DatabaseUser
 import database.servicies.users.DatabaseUsers
 import database.servicies.users.User
 import org.ktorm.entity.Entity
-import org.ktorm.schema.*
+import org.ktorm.schema.Table
+import org.ktorm.schema.int
+import org.ktorm.schema.timestamp
+import org.ktorm.schema.varchar
 import java.time.Instant
 
 interface DatabaseGuild : Entity<DatabaseGuild>, Guild {
@@ -63,7 +66,7 @@ object DatabaseGuilds : Table<DatabaseGuild>("guilds") {
     val id = int("id").primaryKey().bindTo { it.id }
     val owner_id = int("owner_id").references(DatabaseUsers) { it.owner }
     val name = varchar("name").bindTo { it.name }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
 }
 
 interface DatabaseMember : Entity<DatabaseMember>, GuildMember {
@@ -75,11 +78,11 @@ interface DatabaseMember : Entity<DatabaseMember>, GuildMember {
     override val timestamp: Instant
 }
 
-object DatabaseMembers : Table<DatabaseMember>("members") {
+object DatabaseMembers : Table<DatabaseMember>("guild_members") {
     val user_id = int("user_id").references(DatabaseUsers) { it.user }
     val guild_id = int("guild_id").references(DatabaseGuilds) { it.guild }
     val nick = varchar("nick").bindTo { it.nick }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
 }
 
 interface DatabaseGuildChannel : Entity<DatabaseGuildChannel>, GuildChannel {
@@ -145,7 +148,7 @@ object DatabaseGuildInvites : Table<DatabaseGuildInvite>("guild_invites") {
     val url = varchar("url").primaryKey().bindTo { it.url }
     val guild_id = int("guild_id").references(DatabaseGuilds) { it.guild }
     val author = int("author").references(DatabaseUsers) { it.author }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
     val uses = int("uses").bindTo { it.uses }
     val expire = timestamp("expire_timestamp").bindTo { it.expireTimestamp }
     val maxUses = int("use_limit").bindTo { it.maxUses }

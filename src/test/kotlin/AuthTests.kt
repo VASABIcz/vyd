@@ -147,7 +147,6 @@ class AuthTests {
         )
         val usernameService = TestUsernameService()
         val userWrapper = UserWrapper(database, userService, usernameService, hashingService)
-
         application {
             configureSecurity(config)
             configureNegotiation()

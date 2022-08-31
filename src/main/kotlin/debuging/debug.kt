@@ -2,7 +2,7 @@ package debuging
 
 import database.servicies.avatars.DatabaseDefaultAvatarService
 import org.ktorm.database.Database
-import org.ktorm.support.postgresql.PostgreSqlDialect
+import org.ktorm.support.mysql.MySqlDialect
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -35,10 +35,10 @@ fun main() {
         System.getenv("database_uri"),
         user = System.getenv("database_username"),
         password = System.getenv("database_password"),
-        dialect = PostgreSqlDialect()
+        dialect = MySqlDialect()
     )
 
-    val img = File("").inputStream()
+    val img = File("/home/vasabi/Downloads/discord-uwu.png").inputStream()
 
     val croped = crop(img)
 

@@ -1,9 +1,7 @@
 package websockets.worker
 
 import database.servicies.friends.FriendService
-import database.servicies.guilds.GuildMember
 import database.servicies.guilds.GuildMemberService
-import database.servicies.guilds.GuildService
 import io.github.crackthecodeabhi.kreds.connection.Endpoint
 import io.github.crackthecodeabhi.kreds.connection.KredsSubscriber
 import io.github.crackthecodeabhi.kreds.connection.KredsSubscriberClient
@@ -11,11 +9,9 @@ import io.github.crackthecodeabhi.kreds.connection.newSubscriberClient
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.GlobalScope.coroutineContext
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
-import java.awt.Frame
-import kotlin.coroutines.coroutineContext
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import websockets.*
 
 class RedisConnection(
     private val endpoint: Endpoint,
@@ -26,15 +22,23 @@ class RedisConnection(
     ): KredsSubscriber {
     lateinit var redisClient: KredsSubscriberClient
     private val scope = CoroutineScope(Dispatchers.IO)
+    private val json = Json {
+        ignoreUnknownKeys = true
+    }
 
     suspend fun connect() = scope.async {
         redisClient = newSubscriberClient(endpoint, this@RedisConnection)
+        redisClient.subscribe("me:$user")
         redisClient.subscribe("user:$user")
+        redisClient.subscribe("me:state:$user")
+        redisClient.subscribe("user:state:$user")
         for (g in guildMemberService.getGuilds(user)) {
             redisClient.subscribe("guild:${g.guild.id}")
+            redisClient.subscribe("guild:state:${g.guild.id}")
         }
         for (f in friendService.getFriends(user)) {
             redisClient.subscribe("user:${f.friend(user)}")
+            redisClient.subscribe("user:state:${f.friend(user)}")
         }
     }
 
@@ -59,12 +63,64 @@ class RedisConnection(
     }
 
     override fun onMessage(channel: String, message: String) = launch {
+        if (channel.contains("state")) {
+            val event: JustEvent = json.decodeFromString(message)
+            when (event.op) {
+                EventType.RemoveFriend -> {
+                    val r: RemoveFriend = json.decodeFromString(message)
+                    redisClient.unsubscribe("user:${r.friend}")
+                    redisClient.unsubscribe("user:state:${r.friend}")
+                }
+
+                EventType.AddFriend -> {
+                    // FIXME
+                    /*
+                    val r: AddFriend = json.decodeFromString(message)
+                    redisClient.subscribe("user:${r.friend}")
+                    redisClient.subscribe("user:state:${r.friend}")
+
+                     */
+                }
+
+                EventType.GuildMemberLeave -> {
+                    val r: GuildMemberLeave = json.decodeFromString(message)
+                    if (r.member == user) {
+                        redisClient.unsubscribe("guild:${r.member}")
+                        redisClient.unsubscribe("guild:state:${r.member}")
+                    }
+                }
+
+                EventType.GuildMemberJoin -> {
+                    // FIXME
+                    /*
+                    val r: GuildMemberLeave = json.decodeFromString(message)
+                    if (r.member == user) {
+                        redisClient.unsubscribe("guild:${r.member}")
+                        redisClient.unsubscribe("guild:state:${r.member}")
+                    }
+                     */
+                }
+
+                EventType.GuildDelete -> {
+                    val r: GuildDelete = json.decodeFromString(message)
+                    redisClient.unsubscribe("guild:${r.guild}")
+                    redisClient.unsubscribe("guild:state:${r.guild}")
+                }
+
+                EventType.UserDelete -> {
+                    val r: UserDelete = json.decodeFromString(message)
+                    redisClient.unsubscribe("guild:${r.user}")
+                    redisClient.unsubscribe("guild:state:${r.user}")
+                }
+
+                else -> {}
+            }
+        }
         // TODO
         // find a way to identify event like (add friend, or guild join so it can subscribe for those events)
         try {
             send(message)
-        }
-        catch (_: Throwable) {
+        } catch (_: Throwable) {
             close()
         }
     }

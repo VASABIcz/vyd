@@ -4,7 +4,7 @@ import ifLaunch
 import websockets.DispatcherService
 
 class EventGuildMemberService(private val base: GuildMemberService, private val dispatcher: DispatcherService) :
-    GuildMemberService {
+    GuildMemberService by base {
     override suspend fun joinGuild(user: Int, guild: Int): Boolean = base.joinGuild(user, guild).ifLaunch {
         dispatcher.guildJoin(guild, user)
     }
@@ -17,11 +17,4 @@ class EventGuildMemberService(private val base: GuildMemberService, private val 
         base.changeNick(user, guild, nick).ifLaunch {
             dispatcher.guildChangeNick(guild, user, nick)
         }
-
-    override suspend fun getMember(user: Int, guild: Int): GuildMember? = base.getMember(user, guild)
-
-    override suspend fun getMembers(guild: Int, amount: Int, offset: Int): List<GuildMember> =
-        base.getMembers(guild, amount, offset)
-
-    override suspend fun getGuilds(user: Int): List<GuildMember> = base.getGuilds(user)
 }

@@ -15,7 +15,8 @@ class FriendWrapper(
         userId: Int,
         friendId: Int,
         amount: Int? = Config.messageAmountDefault,
-        offset: Int? = 0
+        offset: Int? = 0,
+        id: Int? = null
     ): List<MessagesMessage>? {
         val friends = friendService.getFriendship(userId, friendId) ?: return null
 
@@ -29,7 +30,7 @@ class FriendWrapper(
             return null
         }
 
-        val messages = messageService.getMessages(friends.channel.id, amount, offset)
+        val messages = messageService.getMessages(friends.channel.id, amount, offset, id)
 
         return messages.map {
             it.toMessagesMessage()

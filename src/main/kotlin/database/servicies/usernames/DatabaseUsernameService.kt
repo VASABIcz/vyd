@@ -29,13 +29,14 @@ class DatabaseUsernameService(private val database: Database): UsernameService {
 
     override fun incrementDiscriminator(username: String): Boolean {
         val n = usernames.find {
-            (DatabaseUsernames.username eq username)
+            (it.username eq username)
         } ?: return false
+        println("all guuuuuuuuuuuuuuuuuuuuuuuuud")
         return database.update(DatabaseUsernames) {
             set(DatabaseUsernames.discriminator, base10to36(base36to10(n.discriminator) + 1))
             where {
                 DatabaseUsernames.username eq username
             }
-        } == 0
+        } != 0
     }
 }

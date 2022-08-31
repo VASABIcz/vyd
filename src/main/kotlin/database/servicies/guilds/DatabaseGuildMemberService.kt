@@ -3,6 +3,7 @@ package database.servicies.guilds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.ktorm.database.Database
+import org.ktorm.database.asIterable
 import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.insert
@@ -43,8 +44,31 @@ class DatabaseGuildMemberService(private val database: Database) : GuildMemberSe
         }
 
     override suspend fun getGuilds(user: Int): List<DatabaseMember> = withContext(Dispatchers.IO) {
+        println("getting guilds for $user")
         return@withContext members.filter {
             DatabaseMembers.user_id eq user
-        }.toList()
+        }.toList().also {
+            println("result guilds $it")
+        }
+    }
+
+    override suspend fun getGuilds(user: Int, user1: Int): List<Int> {
+        val sql = """
+            select m.guild_id from guild_members 
+                join guild_members as m 
+                    on guild_members.guild_id = m.guild_id 
+                    and guild_members.user_id = ? 
+                    and m.user_id = ?
+        """.trimIndent()
+
+        return database.useConnection { conn ->
+            conn.prepareStatement(sql).use { statement ->
+                statement.setInt(0, user)
+                statement.setInt(1, user1)
+                statement.executeQuery().asIterable().map {
+                    it.getInt(1)
+                }
+            }
+        }
     }
 }

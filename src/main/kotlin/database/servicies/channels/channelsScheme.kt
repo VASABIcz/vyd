@@ -20,7 +20,7 @@ interface Channel {
 
 @kotlinx.serialization.Serializable
 enum class ChannelType {
-    friends, text, voice, group, category
+    friends, text, voice, group, category, dm
 }
 
 interface DatabaseChannel : Entity<DatabaseChannel>, Channel {
@@ -33,6 +33,6 @@ interface DatabaseChannel : Entity<DatabaseChannel>, Channel {
 
 object DatabaseChannels : Table<DatabaseChannel>("channels") {
     val id = int("id").primaryKey().bindTo { it.id }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
     val type = enum<ChannelType>("type").bindTo { it.type }
 }

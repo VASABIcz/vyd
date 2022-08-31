@@ -2,23 +2,26 @@ package database.servicies.avatars
 
 import org.ktorm.database.Database
 import org.ktorm.dsl.eq
-import org.ktorm.dsl.insert
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
 import org.ktorm.support.mysql.insertOrUpdate
+import java.time.Instant
 
-class DatabaseDefaultAvatarService(private val database: Database) : DefaultAvatarService {
-    private val avatars = database.sequenceOf(DatabaseDefaultAvatars)
-
+class DatabaseGuildAvatarService(private val database: Database) : AvatarService {
+    val avatars = database.sequenceOf(DatabaseGuildImages)
     override suspend fun getAvatar(id: Int): ByteArray? {
         return avatars.find {
             it.id eq id
         }?.image
     }
 
-    override fun createAvatar(avatar: ByteArray): Boolean {
-        return database.insert(DatabaseDefaultAvatars) {
+    override suspend fun setAvatar(id: Int, avatar: ByteArray): Boolean {
+        return database.insertOrUpdate(DatabaseGuildImages) {
             set(it.image, avatar)
+            onDuplicateKey {
+                set(it.image, avatar)
+                set(it.timestamp, Instant.now())
+            }
         } != 0
     }
 
@@ -30,11 +33,4 @@ class DatabaseDefaultAvatarService(private val database: Database) : DefaultAvat
         return avatar.flushChanges() != 0
     }
 
-    override suspend fun setAvatar(id: Int, avatar: ByteArray): Boolean {
-        // FIXME should be update i think
-        return database.insertOrUpdate(DatabaseDefaultAvatars) {
-            set(it.image, avatar)
-            set(it.id, id)
-        } != 0
-    }
 }

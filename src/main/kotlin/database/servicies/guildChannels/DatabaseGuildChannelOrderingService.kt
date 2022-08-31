@@ -7,7 +7,7 @@ import org.ktorm.database.Database
 import org.ktorm.dsl.eq
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
-import org.ktorm.support.postgresql.insertOrUpdate
+import org.ktorm.support.mysql.insertOrUpdate
 
 class DatabaseGuildChannelOrderingService(
     private val database: Database,
@@ -101,7 +101,7 @@ class DatabaseGuildChannelOrderingService(
         return@withContext database.insertOrUpdate(DatabaseGuildChannelOrderings) {
             set(it.guild_id, guild)
             set(it.channels, str)
-            onConflict {
+            onDuplicateKey {
                 set(it.channels, str)
             }
         } != 0
@@ -111,7 +111,7 @@ class DatabaseGuildChannelOrderingService(
         return@withContext database.insertOrUpdate(DatabaseGuildChannelOrderings) {
             set(it.guild_id, guild)
             set(it.channels, "")
-            onConflict {
+            onDuplicateKey {
                 set(it.channels, "")
             }
         } != 0

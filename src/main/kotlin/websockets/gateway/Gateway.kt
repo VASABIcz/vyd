@@ -31,3 +31,22 @@ fun Application.gateway(
         }
     }
 }
+/*
+fun Application.gate(
+    guildMemberService: GuildMemberService,
+    friendService: FriendService,
+    worker: Worker
+) {
+    routing {
+        authenticate {
+            webSocket("gateway") {
+                this
+                val me = call.principal<JWTPrincipal>()!!.userId!!
+                worker.connect(me)
+                this.coroutineContext.job.join()
+            }
+        }
+    }
+}
+
+ */

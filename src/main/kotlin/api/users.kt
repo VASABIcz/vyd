@@ -47,6 +47,19 @@ fun Application.users(
                             call.respondBytes(avatar, ContentType.Image.PNG, HttpStatusCode.OK)
                         }
                     }
+                    route("avatar.png") {
+                        get {
+                            val p = Parameters(call.parameters)
+                            val id by p.parameter("user_id", Converter.Int)
+                            if (!p.isValid) {
+                                return@get call.badRequest(p.getIssues)
+                            }
+
+                            val avatar = avatarWrapper.getUserAvatar(id!!)
+
+                            call.respondBytes(avatar, ContentType.Image.PNG, HttpStatusCode.OK)
+                        }
+                    }
                 }
             }
             route("username") {
@@ -92,6 +105,13 @@ fun Application.users(
                             } else {
                                 call.serverIssue()
                             }
+                        }
+                        get {
+                            val me = call.principal<JWTPrincipal>()?.userId!!
+
+                            val avatar = avatarWrapper.getUserAvatar(me)
+
+                            call.respondBytes(avatar, ContentType.Image.PNG, HttpStatusCode.OK)
                         }
                     }
                 }

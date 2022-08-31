@@ -18,17 +18,19 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import wrapers.AvatarWrapper
 import wrapers.GuildWrapper
 
 fun Application.guilds(
     memberService: GuildMemberService,
-    guildWrapper: GuildWrapper
+    guildWrapper: GuildWrapper,
+    avatarWrapper: AvatarWrapper
 ) {
     routing {
         authenticate {
             route("invites") {
 
-                get("{invite}") {
+                get("{invite}/accept") {
                     val p = Parameters(call.parameters)
                     val invite by p.parameter("invite", Converter.String)
                     if (!p.isValid) {
@@ -60,6 +62,8 @@ fun Application.guilds(
                     call.respond(guilds)
                 }
                 route("create") {
+                    // FIXME       |
+                    //             | ???
                     route("{name}") {
                         post {
                             val p = Parameters(call.parameters)
@@ -115,23 +119,40 @@ fun Application.guilds(
                                 call.serverIssue()
                             }
                         }
-                        route("name") {
-                            patch {
+                        route("avatar") {
+                            get {
                                 val p = Parameters(call.parameters)
-                                val guildId by p.parameter("guild_id", Converter.Int)
-                                val name by p.parameter("name", Converter.String)
+                                val id by p.parameter("guild_id", Converter.Int)
                                 if (!p.isValid) {
-                                    if (!p.isValid) {
-                                        return@patch call.badRequest(p.getIssues)
-                                    }
+                                    return@get call.badRequest(p.getIssues)
                                 }
 
                                 val me = call.principal<JWTPrincipal>()!!.userId!!
 
-                                if (guildWrapper.renameGuild(me, guildId!!, name!!)) {
-                                    call.success()
-                                } else {
-                                    call.serverIssue()
+                                val avatar = avatarWrapper.getGuildAvatar(id!!)
+
+                                call.respondBytes(avatar, ContentType.Image.PNG, HttpStatusCode.OK)
+                            }
+                        }
+                        route("name") {
+                            route("{name}") {
+                                patch {
+                                    val p = Parameters(call.parameters)
+                                    val guildId by p.parameter("guild_id", Converter.Int)
+                                    val name by p.parameter("name", Converter.String)
+                                    if (!p.isValid) {
+                                        if (!p.isValid) {
+                                            return@patch call.badRequest(p.getIssues)
+                                        }
+                                    }
+
+                                    val me = call.principal<JWTPrincipal>()!!.userId!!
+
+                                    if (guildWrapper.renameGuild(me, guildId!!, name!!)) {
+                                        call.success()
+                                    } else {
+                                        call.serverIssue()
+                                    }
                                 }
                             }
                         }
@@ -416,14 +437,13 @@ fun Application.guilds(
                                             val me = call.principal<JWTPrincipal>()!!.userId!!
 
                                             val messages =
-                                                guildWrapper.getMessages(me, guildId!!, channelId!!, amount, offset)
+                                                guildWrapper.getMessages(me, guildId!!, channelId!!, amount, offset, id)
                                                     ?: return@get call.serverIssue()
 
                                             call.respond(messages)
                                         }
                                         route("send") {
                                             post {
-                                                val message = call.receive<MessagePayload>()
                                                 val p = Parameters(call.parameters)
                                                 val guildId by p.parameter("guild_id", Converter.Int)
                                                 val channelId by p.parameter("channel_id", Converter.Int)
@@ -432,6 +452,8 @@ fun Application.guilds(
                                                         return@post call.badRequest(p.getIssues)
                                                     }
                                                 }
+
+                                                val message = call.receive<MessagePayload>()
 
                                                 val me = call.principal<JWTPrincipal>()!!.userId!!
                                                 if (guildWrapper.sendMessage(
@@ -472,7 +494,7 @@ fun Application.guilds(
                                                     call.respond(message)
                                                 }
                                                 patch {
-
+                                                    TODO()
                                                 }
                                                 delete {
                                                     val p = Parameters(call.parameters)
@@ -561,6 +583,7 @@ fun Application.guilds(
                                     }
                                     route("rename") {
                                         patch {
+                                            TODO()
                                             val p = Parameters(call.parameters)
                                             val guildId by p.parameter("guild_id", Converter.Int)
                                             val memberId by p.parameter("member_id", Converter.Int)

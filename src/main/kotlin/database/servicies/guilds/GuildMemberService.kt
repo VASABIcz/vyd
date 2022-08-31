@@ -12,4 +12,6 @@ interface GuildMemberService {
     suspend fun getMembers(guild: Int, amount: Int = 50, offset: Int = 0): List<GuildMember>
 
     suspend fun getGuilds(user: Int): List<GuildMember>
+
+    suspend fun getGuilds(user: Int, user1: Int): List<Int>
 }

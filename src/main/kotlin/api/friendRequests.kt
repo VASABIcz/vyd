@@ -83,7 +83,6 @@ fun Application.friendRequests(
                                 call.serverIssue()
                             }
                         }
-                        /*
                         get {
                             val p = Parameters(call.parameters)
                             val requestId by p.parameter("request_id", Converter.Int)
@@ -97,8 +96,6 @@ fun Application.friendRequests(
 
                             call.respond(request)
                         }
-
-                         */
                     }
                 }
             }

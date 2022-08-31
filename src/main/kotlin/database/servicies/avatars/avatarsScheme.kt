@@ -11,7 +11,8 @@ import java.time.Instant
 @kotlinx.serialization.Serializable
 enum class AvatarOwner {
     user,
-    guild
+    guild,
+    group
 }
 
 interface Image {
@@ -47,14 +48,14 @@ interface DatabaseDefaultAvatar : Entity<DatabaseDefaultAvatar>, Image {
 }
 
 object DatabaseGuildImages : Table<DatabaseGuildImage>("guild_avatars") {
-    val id = int("id").primaryKey().bindTo { it.id }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val id = int("guild_id").primaryKey().bindTo { it.id }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
     val image = bytes("avatar").bindTo { it.image }
 }
 
 object DatabaseUsersImages : Table<DatabaseUserImage>("user_avatars") {
     val id = int("user_id").primaryKey().bindTo { it.id }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
     val image = bytes("avatar").bindTo { it.image }
 }
 

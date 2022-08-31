@@ -32,10 +32,6 @@ data class Chans(val categories: MutableList<Category>, val noCategory: MutableL
     companion object {
         suspend fun fromString(str: String, channelService: GuildChannelService, guild: Int): Chans =
             withContext(Dispatchers.IO) {
-                // TODO rewrite
-                // reponse time 1s 700-800 ms just this :)
-                // parse just metadata
-                // then currently query database
                 var buf = ""
                 val noCategory = emptyList<GuildChannel>().toMutableList()
                 val categories = emptyList<Category>().toMutableList()

@@ -5,8 +5,15 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-sealed interface Event {
-    val op: EventType
+@Serializable
+sealed interface Event
+
+@Serializable
+data class JustEvent(val op: EventType) : Event
+
+private val json = Json {
+    coerceInputValues = true
+    ignoreUnknownKeys = true
 }
 
 @Serializable
@@ -14,34 +21,34 @@ data class MessageEvent(
     val author: Int,
     val channel: Int,
     val content: String,
-    override val op: EventType = EventType.Message
+    val op: EventType
 ) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class MessageMetadata(val author: Int, override val op: EventType = EventType.MessageMeta) : Event {
+data class MessageMetadata(val author: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class GuildAvatarChange(val author: Int, override val op: EventType = EventType.GuildAvatarChange) : Event {
+data class GuildAvatarChange(val author: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class UserAvatarChange(val author: Int, override val op: EventType = EventType.UserAvatarChange) : Event {
+data class UserAvatarChange(val author: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class UserRename(val author: Int, val name: String, override val op: EventType = EventType.UserRename) : Event {
+data class UserRename(val author: Int, val name: String, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
@@ -49,77 +56,77 @@ data class FriendRequest(
     val sender: Int,
     val receiver: Int,
     val id: Int,
-    override val op: EventType = EventType.FriendRequest
+    val op: EventType
 ) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class AddFriend(val friend: Int, override val op: EventType = EventType.AddFriend) : Event {
+data class AddFriend(val friend: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class RemoveFriend(val friend: Int, override val op: EventType = EventType.AddFriend) : Event {
+data class RemoveFriend(val friend: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class SendDM(val sender: Int, val message: String, override val op: EventType = EventType.SendDm) : Event {
+data class SendDM(val sender: Int, val message: String, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
 data class GuildChannelsUpdate(
     val channels: GuildsChannels,
-    override val op: EventType = EventType.GuildChannelsUpdate
+    val op: EventType
 ) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class GuildMemberLeave(val member: Int, override val op: EventType = EventType.GuildMemberLeave) : Event {
+data class GuildMemberLeave(val member: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class GuildMemberJoin(val member: Int, override val op: EventType = EventType.GuildMemberJoin) : Event {
+data class GuildMemberJoin(val member: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
 data class GuildMemberNickChange(
     val member: Int,
     val nick: String?,
-    override val op: EventType = EventType.GuildMemberJoin
+    val op: EventType
 ) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class GuildDelete(override val op: EventType = EventType.GuildDelete) : Event {
+data class GuildDelete(val guild: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class GuildRename(val name: String, override val op: EventType = EventType.GuildRename) : Event {
+data class GuildRename(val name: String, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
-data class UserDelete(override val op: EventType = EventType.UserDelete) : Event {
+data class UserDelete(val user: Int, val op: EventType) : Event {
     val encode: String
-        get() = Json.encodeToString(this)
+        get() = json.encodeToString(this)
 }
 
 @Serializable
@@ -137,5 +144,7 @@ enum class EventType {
     GuildMemberJoin,
     GuildDelete,
     GuildRename,
-    UserDelete
+    UserDelete,
+    RemoveFriend,
+    MemberChangeNick
 }

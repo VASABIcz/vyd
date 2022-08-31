@@ -1,11 +1,9 @@
 package database.servicies.messages
 
 import org.ktorm.database.Database
-import org.ktorm.dsl.and
-import org.ktorm.dsl.eq
-import org.ktorm.dsl.gt
-import org.ktorm.dsl.insertAndGenerateKey
+import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.time.Instant
 
 class DatabaseMessageService(private val database: Database) : MessageService {
     private val messages get() = database.sequenceOf(DatabaseMessages)
@@ -47,5 +45,27 @@ class DatabaseMessageService(private val database: Database) : MessageService {
         }
     }
 
+    override fun getMessages(channel: Int, amount: Int, id: Int, olderThan: Boolean): List<DatabaseMessage> {
+        return if (olderThan) {
+            messages.filter {
+                (it.channel eq channel) and (it.id less id)
+            }.take(amount).toList()
+        } else {
+            messages.filter {
+                (it.channel eq channel) and (it.id gt id)
+            }.take(amount).toList()
+        }
+    }
 
+    override fun getMessages(channel: Int, amount: Int, timestamp: Instant, olderThan: Boolean): List<DatabaseMessage> {
+        return if (olderThan) {
+            messages.filter {
+                (it.channel eq channel) and (it.timestamp less timestamp)
+            }.take(amount).toList()
+        } else {
+            messages.filter {
+                (it.channel eq channel) and (it.timestamp gt timestamp)
+            }.take(amount).toList()
+        }
+    }
 }

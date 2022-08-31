@@ -16,6 +16,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import wrapers.FriendWrapper
 
+
 fun Application.friends(
     friendService: FriendService,
     friendWrapper: FriendWrapper
@@ -138,8 +139,6 @@ fun Application.friends(
                                         }
                                     }
                                     patch {
-                                        val message = call.receive<MessagePayload>()
-
                                         val p = Parameters(call.parameters)
                                         val friendId by p.parameter("friend_id", Converter.Int)
                                         val messageId by p.parameter("message_id", Converter.Int)
@@ -148,6 +147,9 @@ fun Application.friends(
                                         }
 
                                         val me = call.principal<JWTPrincipal>()!!.userId!!
+                                        // TODO use this in guild
+                                        val message = call.receive<MessagePayload>()
+                                        // TODO refactor friends route
 
                                         if (friendWrapper.editMessage(me, friendId!!, messageId!!, message.content)) {
                                             call.success()

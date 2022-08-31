@@ -61,5 +61,5 @@ object DatabaseFriendRequests : Table<DatabaseFriendRequest>("friend_requests") 
     val requester = int("requester").references(DatabaseUsers) { it.requester }
     val receiver = int("receiver").references(DatabaseUsers) { it.receiver }
     val state = enum<FriendRequestState>("state").bindTo { it.state }
-    val timestamp = timestamp("[timestamp]").bindTo { it.timestamp }
+    val timestamp = timestamp("timestamp").bindTo { it.timestamp }
 }
