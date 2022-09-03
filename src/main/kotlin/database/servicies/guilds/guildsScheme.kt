@@ -37,7 +37,9 @@ interface Guild {
     }
 }
 
-interface GuildMember {
+interface
+GuildMember {
+    val id: Int
     val user: User
     val guild: Guild
     var nick: String?
@@ -72,6 +74,7 @@ object DatabaseGuilds : Table<DatabaseGuild>("guilds") {
 interface DatabaseMember : Entity<DatabaseMember>, GuildMember {
     companion object : Entity.Factory<DatabaseMember>()
 
+    override val id: Int
     override val user: DatabaseUser
     override val guild: DatabaseGuild
     override var nick: String?
@@ -79,6 +82,7 @@ interface DatabaseMember : Entity<DatabaseMember>, GuildMember {
 }
 
 object DatabaseMembers : Table<DatabaseMember>("guild_members") {
+    val id = int("id").primaryKey().bindTo { it.id }
     val user_id = int("user_id").references(DatabaseUsers) { it.user }
     val guild_id = int("guild_id").references(DatabaseGuilds) { it.guild }
     val nick = varchar("nick").bindTo { it.nick }
