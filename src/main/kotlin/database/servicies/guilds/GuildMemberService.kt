@@ -9,6 +9,7 @@ interface GuildMemberService {
 
     suspend fun getMember(user: Int, guild: Int): GuildMember?
 
+    suspend fun getMember(member: Int): GuildMember?
     suspend fun getMembers(guild: Int, amount: Int = 50, offset: Int = 0): List<GuildMember>
 
     suspend fun getGuilds(user: Int): List<GuildMember>

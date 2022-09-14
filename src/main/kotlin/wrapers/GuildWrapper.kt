@@ -60,6 +60,8 @@ class GuildWrapper(
     }
 
     suspend fun createGuild(owner: Int, name: String): Guild? {
+        // TODO add create role (everyone)
+
         database.useTransaction {
             val guildId = guildService.createGuild(owner, name) ?: throw Throwable("failed to create guild")
             println("guild id is $guildId $owner")
@@ -74,8 +76,6 @@ class GuildWrapper(
     }
 
     suspend fun deleteGuild(userId: Int, guildId: Int): Boolean {
-        // TODO implement guild permisions ex, delete, ban, channels, ...
-
         return if (isOwner(userId, guildId).await()) {
             guildService.deleteGuild(guildId)
         } else {
@@ -84,6 +84,8 @@ class GuildWrapper(
     }
 
     suspend fun renameChannel(userId: Int, guildId: Int, channelId: Int, name: String): Boolean {
+        // TODO add is admin or manageChannels check
+        // and manage this channel check
         return if (isOwner(userId, guildId).await()) {
             guildChannelService.editChannel(channelId, guildId, name)
         } else {
@@ -92,6 +94,7 @@ class GuildWrapper(
     }
 
     suspend fun renameGuild(userId: Int, guildId: Int, name: String): Boolean {
+        // if admin / mangeGuild
         return if (isOwner(userId, guildId).await()) {
             guildService.renameGuild(guildId, name)
         } else {
@@ -100,6 +103,7 @@ class GuildWrapper(
     }
 
     suspend fun createChannel(guildId: Int, userId: Int, name: String, type: ChannelType, category: Int?): Boolean {
+        // admin / mange channels
         if (!isOwner(userId, guildId).await()) {
             return false
         }
@@ -121,6 +125,7 @@ class GuildWrapper(
     }
 
     suspend fun moveChannel(channelId: Int, userId: Int, guildId: Int, position: Int, category: Int?): Boolean {
+        // TODO manage channel + can see + can move / admin
         if (!isOwner(userId, guildId).await()) {
             return false
         }
@@ -136,6 +141,7 @@ class GuildWrapper(
     }
 
     suspend fun getChannels(userId: Int, guildId: Int): List<GuildsChannel>? {
+        // TODO filter can see
         if (!isMember(userId, guildId).await()) {
             return null
         }
@@ -146,6 +152,7 @@ class GuildWrapper(
     }
 
     suspend fun getChannelsOrdered(userId: Int, guildId: Int): Chans? {
+        // TODO filter can see
         if (!isMember(userId, guildId).await()) {
             return null
         }
@@ -154,6 +161,7 @@ class GuildWrapper(
     }
 
     suspend fun getChannel(userId: Int, guildId: Int, channelId: Int): GuildsChannel? {
+        // TODO filter can see
         if (!isMember(userId, guildId).await()) {
             return null
         }
@@ -162,6 +170,7 @@ class GuildWrapper(
     }
 
     suspend fun deleteChannel(userId: Int, guildId: Int, channelId: Int): Boolean {
+        // TODO admin / can mange channels + can manage channel + can see
         return if (isOwner(userId, guildId).await()) {
             database.useTransaction {
                 if (!channelService.deleteChannel(channelId)) {
@@ -185,6 +194,7 @@ class GuildWrapper(
         offset: Int? = 0,
         id: Int?
     ): List<MessagesMessage>? {
+        // TODO admin / can see history, can see history in channel
         val isMember = isMember(userId, guildId)
         val isGuildChannel = isGuildChannel(channelId, guildId)
         if (!isMember.await() || !isGuildChannel.await()) {
@@ -206,6 +216,7 @@ class GuildWrapper(
     }
 
     suspend fun getMessage(userId: Int, guildId: Int, channelId: Int, messageId: Int): MessagesMessage? {
+        // TODO admin / can see history, can see history in channel
         val isMember = isMember(userId, guildId)
         val isGuildChannel = isGuildChannel(channelId, guildId)
 
@@ -222,6 +233,7 @@ class GuildWrapper(
     }
 
     suspend fun sendMessage(userId: Int, guildId: Int, channelId: Int, content: String): Boolean {
+        // TODO admin / can send / can send here
         val t = measureTimeMillis {
             val isGuildChannel = isGuildChannel(channelId, guildId)
             val isMember = isMember(userId, guildId)
@@ -241,7 +253,7 @@ class GuildWrapper(
     }
 
     suspend fun deleteMessage(userId: Int, guildId: Int, channelId: Int, messageId: Int): Boolean {
-        // TODO delete message that takes user as parameter
+        // TODO admin / manage messages + view history / manage messages here + view history
         val message = messageService.getMessage(messageId) ?: return false
         if (!isOwner(userId, guildId).await() || (message.author.id == userId) || (channelId != message.channel.id)) {
             return false
@@ -269,6 +281,7 @@ class GuildWrapper(
     }
 
     suspend fun changeNick(userId: Int, guildId: Int, nick: String): Boolean {
+        // TODO is admin / manage nickname
         if (!isMember(userId, guildId).await()) {
             return false
         }
@@ -277,6 +290,7 @@ class GuildWrapper(
     }
 
     suspend fun leaveMember(userId: Int, guildId: Int, memberId: Int): Boolean {
+        // TODO admin / kick
         val isMember1 = isMember(userId, guildId)
         val isMember2 = isMember(memberId, guildId)
         val isOwner = isOwner(userId, guildId)
@@ -292,6 +306,7 @@ class GuildWrapper(
     }
 
     suspend fun createInvite(userId: Int, guildId: Int, url: String?, expire: Long?, maxUses: Int?): String? {
+        // TODO admin / create invite
         if (!isOwner(userId, guildId).await()) {
             return null
         }
@@ -331,6 +346,7 @@ class GuildWrapper(
     }
 
     suspend fun joinInvite(userId: Int, url: String): Boolean {
+        // TODO is banned?
         val inv = guildInviteService.getInvite(url) ?: return false
         if (!inv.isUsable()) {
             return false
@@ -347,6 +363,7 @@ class GuildWrapper(
     }
 
     suspend fun getInvites(userId: Int, guildId: Int): List<GuildsInvite>? {
+        // TODO admin / mange invites / guild
         if (!isOwner(userId, guildId).await()) {
             return null
         }
@@ -356,6 +373,7 @@ class GuildWrapper(
     }
 
     suspend fun getInvite(userId: Int, guildId: Int, url: String): GuildsInvite? {
+        // TODO admin / mange invites / is mine invite
         if (!isOwner(userId, guildId).await()) {
             return null
         }
@@ -363,6 +381,7 @@ class GuildWrapper(
     }
 
     suspend fun deleteInvite(userId: Int, guildId: Int, url: String): Boolean {
+        // TODO admin / mange invites / guild
         if (!isOwner(userId, guildId).await()) {
             return false
         }

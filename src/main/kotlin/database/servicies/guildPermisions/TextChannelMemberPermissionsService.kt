@@ -1,10 +1,7 @@
 package database.servicies.guildPermisions
 
 import org.ktorm.database.Database
-import org.ktorm.dsl.and
-import org.ktorm.dsl.eq
-import org.ktorm.dsl.insert
-import org.ktorm.dsl.insertAndGenerateKey
+import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
@@ -16,6 +13,12 @@ class TextChannelMemberPermissionsService(private val database: Database) : Text
     override suspend fun getOverrides(channel: Int): List<TextChannelMemberOverride> {
         return permissions.filter {
             it.channel eq channel
+        }.toList()
+    }
+
+    override suspend fun getOverrides(channel: Int, member: List<Int>): List<TextChannelMemberOverride> {
+        return permissions.filter {
+            (it.channel eq channel) and (it.member inList member)
         }.toList()
     }
 
@@ -67,6 +70,11 @@ class TextChannelMemberPermissionsService(private val database: Database) : Text
         ov.permissions.mentionEveryone = override.mentionEveryone
         ov.permissions.manageMessages = override.manageMessages
         ov.permissions.viewHistory = override.viewHistory
+        // general
+        ov.permissions.viewChannel = override.viewChannel
+        ov.permissions.manageChannel = override.manageChannel
+        ov.permissions.managePermissions = override.managePermissions
+
         return ov.permissions.flushChanges() != 0
     }
 }

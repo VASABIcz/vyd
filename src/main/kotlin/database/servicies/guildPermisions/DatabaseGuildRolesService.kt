@@ -114,4 +114,10 @@ class DatabaseGuildRolesService(private val database: Database) : GuildRolesServ
             it.id inList roles.toList()
         }.toList()
     }
+
+    override suspend fun getRoles(guild: Int): List<Role> {
+        return _roles.filter {
+            it.guild eq guild
+        }.toList()
+    }
 }

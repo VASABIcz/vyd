@@ -7,5 +7,9 @@ interface GuildRolesOrdering {
 
     suspend fun get(guild: Int): List<RolePosition>
 
+    suspend fun get(guild: Int, roles: List<Int>): List<RolePosition>
+
     suspend fun isHigher(role: Int, role1: Int): Boolean?
+
+    suspend fun addBeforeLast(role: Int, guild: Int): Boolean
 }

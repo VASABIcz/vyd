@@ -12,4 +12,6 @@ interface GuildRolesService {
     suspend fun updateRole(id: Int, permissions: Permissions): Boolean
 
     suspend fun getRoles(roles: Iterable<Int>): List<Role>
+
+    suspend fun getRoles(guild: Int): List<Role>
 }

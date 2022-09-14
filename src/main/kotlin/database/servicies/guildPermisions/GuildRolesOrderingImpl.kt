@@ -27,6 +27,33 @@ class GuildRolesOrderingImpl(private val database: Database) : GuildRolesOrderin
         }
     }
 
+    override suspend fun addBeforeLast(role: Int, guild: Int): Boolean {
+        // used for adding role that's always before @everyone aka last role
+        val lastRole = roles.filter {
+            it.guild eq guild
+        }.sortedBy { it.position }.lastOrNull()
+
+        return if (lastRole == null) {
+            database.insert(DatabaseRoleOrdering) {
+                set(it.guild, guild)
+                set(it.role, role)
+                set(it.position, 0)
+            } != 0
+        } else {
+            database.update(DatabaseRoleOrdering) {
+                set(it.position, it.position + 1)
+                where {
+                    (it.guild eq guild) and (it.position greaterEq lastRole.position)
+                }
+            }
+            database.insert(DatabaseRoleOrdering) {
+                set(it.guild, guild)
+                set(it.role, role)
+                set(it.position, lastRole.position)
+            } != 0
+        }
+    }
+
     override suspend fun move(role: Int, guild: Int, position: Int): Boolean {
         // checks
         if (position < 0) return false
@@ -57,6 +84,10 @@ class GuildRolesOrderingImpl(private val database: Database) : GuildRolesOrderin
 
     override suspend fun get(guild: Int): List<RolePosition> {
         return roles.filter { it.guild eq guild }.sortedBy { it.position }.toList()
+    }
+
+    override suspend fun get(guild: Int, _roles: List<Int>): List<RolePosition> {
+        return roles.filter { (it.guild eq guild) and (it.role inList _roles) }.sortedBy { it.position }.toList()
     }
 
     override suspend fun isHigher(role: Int, role1: Int): Boolean? {

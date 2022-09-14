@@ -14,8 +14,8 @@ class DatabaseGuildMemberService(private val database: Database) : GuildMemberSe
 
     override suspend fun joinGuild(user: Int, guild: Int): Boolean = withContext(Dispatchers.IO) {
         return@withContext database.insert(DatabaseMembers) {
-            set(DatabaseMembers.user_id, user)
-            set(DatabaseMembers.guild_id, guild)
+            set(it.user_id, user)
+            set(it.guild_id, guild)
         } > 0
     }
 
@@ -32,21 +32,27 @@ class DatabaseGuildMemberService(private val database: Database) : GuildMemberSe
 
     override suspend fun getMember(user: Int, guild: Int): DatabaseMember? = withContext(Dispatchers.IO) {
         return@withContext members.find {
-            (DatabaseMembers.user_id eq user) and (DatabaseMembers.guild_id eq guild)
+            (it.user_id eq user) and (it.guild_id eq guild)
+        }
+    }
+
+    override suspend fun getMember(member: Int): DatabaseMember? = withContext(Dispatchers.IO) {
+        return@withContext members.find {
+            it.id eq member
         }
     }
 
     override suspend fun getMembers(guild: Int, amount: Int, offset: Int): List<DatabaseMember> =
         withContext(Dispatchers.IO) {
             return@withContext members.filter {
-                DatabaseMembers.guild_id eq guild
+                it.guild_id eq guild
             }.drop(offset).take(amount).toList()
         }
 
     override suspend fun getGuilds(user: Int): List<DatabaseMember> = withContext(Dispatchers.IO) {
         println("getting guilds for $user")
         return@withContext members.filter {
-            DatabaseMembers.user_id eq user
+            it.user_id eq user
         }.toList().also {
             println("result guilds $it")
         }

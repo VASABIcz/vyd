@@ -37,8 +37,7 @@ interface Guild {
     }
 }
 
-interface
-GuildMember {
+interface GuildMember {
     val id: Int
     val user: User
     val guild: Guild
@@ -52,6 +51,12 @@ GuildMember {
     fun toMembersMember(): MembersMember {
         return MembersMember(user.toUsersUser(), nick, guild.toGuildsGuild(), timestamp.toEpochMilli())
     }
+
+    fun isOwner(): Boolean {
+        return guild.owner.id == user.id
+    }
+
+    val owner: Boolean get() = isOwner()
 }
 
 interface GuildChannel {
@@ -81,6 +86,7 @@ interface DatabaseMember : Entity<DatabaseMember>, GuildMember {
     override val timestamp: Instant
 }
 
+// @Deprecated(level = DeprecationLevel.ERROR)
 object DatabaseMembers : Table<DatabaseMember>("guild_members") {
     val id = int("id").primaryKey().bindTo { it.id }
     val user_id = int("user_id").references(DatabaseUsers) { it.user }

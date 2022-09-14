@@ -3,6 +3,8 @@ package database.servicies.guildPermisions
 interface VoiceChannelRolePermissions {
     suspend fun getOverrides(channel: Int): List<VoiceChannelRoleOverride>
 
+    suspend fun getOverrides(channel: Int, role: List<Int>): List<VoiceChannelRoleOverride>
+
     suspend fun getOverride(channel: Int, role: Int): VoiceChannelRoleOverride?
 
     suspend fun removeOverride(channel: Int, role: Int): Boolean

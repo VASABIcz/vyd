@@ -8,6 +8,18 @@ import org.ktorm.entity.Entity
 import org.ktorm.schema.*
 import java.time.Instant
 
+fun Boolean?.applyOr(bool: Boolean?): Boolean? {
+    return if (this == null) {
+        bool
+    } else if (bool == null) {
+        this
+    } else if (this == false) {
+        bool
+    } else {
+        true
+    }
+}
+
 interface GuildPermissions {
     // guild
     var admin: Boolean
@@ -27,6 +39,14 @@ interface MemberRole {
     val assigner: User?
 }
 
+// TODO IMPLEMENT THIS
+interface ChannelPermissionsOverride {
+    var viewChannel: Boolean?
+    var manageChannel: Boolean?
+    var managePermissions: Boolean?
+    // var manageWebhooks: Boolean?
+}
+
 interface TextChannelPermissions {
     // text
     var sendMessages: Boolean
@@ -39,7 +59,7 @@ interface TextChannelPermissions {
     var viewHistory: Boolean
 }
 
-interface TextChannelPermissionsOverride {
+interface TextChannelPermissionsOverride : ChannelPermissionsOverride {
     // text
     val id: Int
     var sendMessages: Boolean?
@@ -50,6 +70,20 @@ interface TextChannelPermissionsOverride {
     var mentionEveryone: Boolean?
     var manageMessages: Boolean?
     var viewHistory: Boolean?
+
+    fun applyOr(item: TextChannelPermissionsOverride) {
+        this.viewChannel = this.viewChannel.applyOr(item.viewChannel)
+        this.manageChannel = this.manageChannel.applyOr(item.manageChannel)
+        this.managePermissions = this.managePermissions.applyOr(item.managePermissions)
+        this.sendMessages = this.sendMessages.applyOr(item.sendMessages)
+        this.sendEmbeds = this.sendEmbeds.applyOr(item.sendEmbeds)
+        this.sendAttachments = this.sendAttachments.applyOr(item.sendAttachments)
+        this.addReactions = this.addReactions.applyOr(item.addReactions)
+        this.sendExternalEmojis = this.sendExternalEmojis.applyOr(item.sendExternalEmojis)
+        this.mentionEveryone = this.mentionEveryone.applyOr(item.mentionEveryone)
+        this.manageMessages = this.manageMessages.applyOr(item.manageMessages)
+        this.viewHistory = this.viewHistory.applyOr(item.viewHistory)
+    }
 }
 
 interface VoiceChannelPermissions {
@@ -75,7 +109,7 @@ interface MemberPermissions {
     var moderate: Boolean
 }
 
-interface VoiceChannelPermissionsOverride {
+interface VoiceChannelPermissionsOverride : ChannelPermissionsOverride {
     // text
     val id: Int
     var connect: Boolean?
@@ -87,6 +121,19 @@ interface VoiceChannelPermissionsOverride {
     var prioritySpeaker: Boolean?
     var deafen: Boolean?
     var move: Boolean?
+
+    fun applyOr(item: VoiceChannelPermissionsOverride) {
+        this.viewChannel = this.viewChannel.applyOr(item.viewChannel)
+        this.manageChannel = this.manageChannel.applyOr(item.manageChannel)
+        this.managePermissions = this.managePermissions.applyOr(item.managePermissions)
+        this.connect = this.connect.applyOr(item.connect)
+        this.speak = this.speak.applyOr(item.speak)
+        this.streamVideo = this.streamVideo.applyOr(item.streamVideo)
+        this.activities = this.activities.applyOr(item.activities)
+        this.prioritySpeaker = this.prioritySpeaker.applyOr(item.prioritySpeaker)
+        this.deafen = this.deafen.applyOr(item.deafen)
+        this.move = this.move.applyOr(item.move)
+    }
 }
 
 interface Override {
@@ -96,7 +143,7 @@ interface Override {
     val author: User?
 }
 
-interface TextChannelRoleOverride : TextChannelPermissionsOverride {
+interface TextChannelRoleOverride {
     val role: Role
 
     // val guild: Guild
@@ -107,7 +154,7 @@ interface TextChannelRoleOverride : TextChannelPermissionsOverride {
 }
 
 interface TextChannelMemberOverride {
-    val member: User
+    val member: GuildMember
 
     // val guild: Guild
     val channel: GuildChannel
@@ -127,7 +174,7 @@ interface VoiceChannelRoleOverride {
 }
 
 interface VoiceChannelMemberOverride {
-    val member: User
+    val member: GuildMember
 
     // val guild: Guild
     val channel: GuildChannel
@@ -136,7 +183,101 @@ interface VoiceChannelMemberOverride {
     val author: User?
 }
 
-interface Permissions : TextChannelPermissions, VoiceChannelPermissions, GuildPermissions, MemberPermissions
+interface Permissions : TextChannelPermissions, VoiceChannelPermissions, GuildPermissions, MemberPermissions {
+    fun applyOr(permissions: Permissions) {
+        this.admin = this.admin || permissions.admin
+        this.viewChannels = this.viewChannels || permissions.viewChannels
+        this.manageChannels = this.manageChannels || permissions.manageChannels
+        this.manageRoles = this.manageRoles || permissions.manageRoles
+        this.manageEmojis = this.manageEmojis || permissions.manageEmojis
+        this.viewLogs = this.viewLogs || permissions.viewLogs
+        this.manageWebhooks = this.manageWebhooks || permissions.manageWebhooks
+        this.manageGuild = this.manageGuild || permissions.manageGuild
+        this.sendMessages = this.sendMessages || permissions.sendMessages
+        this.sendEmbeds = this.sendEmbeds || permissions.sendEmbeds
+        this.sendAttachments = this.sendAttachments || permissions.sendAttachments
+        this.addReactions = this.addReactions || permissions.addReactions
+        this.sendExternalEmojis = this.sendExternalEmojis || permissions.sendExternalEmojis
+        this.mentionEveryone = this.mentionEveryone || permissions.mentionEveryone
+        this.manageMessages = this.manageMessages || permissions.manageMessages
+        this.viewHistory = this.viewHistory || permissions.viewHistory
+        this.connect = this.connect || permissions.connect
+        this.speak = this.speak || permissions.speak
+        this.streamVideo = this.streamVideo || permissions.streamVideo
+        this.prioritySpeaker = this.prioritySpeaker || permissions.prioritySpeaker
+        this.deafen = this.deafen || permissions.deafen
+        this.move = this.move || permissions.move
+        this.createInvite = this.createInvite || permissions.createInvite
+        this.changeNickName = this.changeNickName || permissions.changeNickName
+        this.manageNickName = this.manageNickName || permissions.manageNickName
+        this.kickMember = this.kickMember || permissions.kickMember
+        this.banMember = this.banMember || permissions.banMember
+        this.moderate = this.moderate || permissions.moderate
+    }
+
+    fun setAll(bool: Boolean) {
+        this.admin = bool
+        this.viewChannels = bool
+        this.manageChannels = bool
+        this.manageRoles = bool
+        this.manageEmojis = bool
+        this.viewLogs = bool
+        this.manageWebhooks = bool
+        this.manageGuild = bool
+        this.sendMessages = bool
+        this.sendEmbeds = bool
+        this.sendAttachments = bool
+        this.addReactions = bool
+        this.sendExternalEmojis = bool
+        this.mentionEveryone = bool
+        this.manageMessages = bool
+        this.viewHistory = bool
+        this.connect = bool
+        this.speak = bool
+        this.streamVideo = bool
+        this.prioritySpeaker = bool
+        this.deafen = bool
+        this.move = bool
+        this.createInvite = bool
+        this.changeNickName = bool
+        this.manageNickName = bool
+        this.kickMember = bool
+        this.banMember = bool
+        this.moderate = bool
+    }
+
+    fun applyOverride(permissions: TextChannelPermissionsOverride) {
+        permissions.sendMessages?.also { this.sendMessages = it }
+        permissions.sendEmbeds?.also { this.sendEmbeds = it }
+        permissions.sendAttachments?.also { this.sendAttachments = it }
+        permissions.addReactions?.also { this.addReactions = it }
+        permissions.sendExternalEmojis?.also { this.sendExternalEmojis = it }
+        permissions.mentionEveryone?.also { this.mentionEveryone = it }
+        permissions.manageMessages?.also { this.manageMessages = it }
+        permissions.viewHistory?.also { this.viewHistory = it }
+    }
+
+    fun applyOverride(permissions: VoiceChannelPermissionsOverride) {
+        permissions.connect?.also { this.connect = it }
+        permissions.speak?.also { this.speak = it }
+        permissions.streamVideo?.also { this.streamVideo = it }
+        permissions.prioritySpeaker?.also { this.prioritySpeaker = it }
+        permissions.deafen?.also { this.deafen = it }
+        permissions.move?.also { this.move = it }
+
+        permissions.viewChannel
+        var viewChannel: Boolean?
+        var manageChannel: Boolean?
+        var managePermissions: Boolean?
+    }
+
+    fun applyChannelOverride(permissions: ChannelPermissionsOverride) {
+        permissions.viewChannel?.also { this.viewChannels = it }
+        permissions.manageChannel?.also { this.manageChannels = it }
+        // FIXME propably equivalent
+        permissions.managePermissions?.also { this.manageRoles = it }
+    }
+}
 
 interface Role : Permissions {
     val id: Int
@@ -255,6 +396,10 @@ object DatabaseTextPermissions : Table<DatabaseTextPermission>("text_channel_per
     val mention_everyone = boolean("mention_everyone").bindTo { it.mentionEveryone }
     val manage_messages = boolean("manage_messages").bindTo { it.manageMessages }
     val view_history = boolean("view_history").bindTo { it.viewHistory }
+
+    val view_channel = boolean("view_channel").bindTo { it.viewChannel }
+    val manage_channel = boolean("manage_channel").bindTo { it.manageChannel }
+    val manage_permissions = boolean("manage_permissions").bindTo { it.managePermissions }
 }
 
 interface DatabaseVoicePermission : Entity<DatabaseVoicePermission>, VoiceChannelPermissionsOverride {
@@ -269,13 +414,17 @@ object DatabaseVoicePermissions : Table<DatabaseVoicePermission>("voice_channel_
     val priority_speaker = boolean("priority_speaker").bindTo { it.prioritySpeaker }
     val deafen = boolean("deafen").bindTo { it.deafen }
     val move = boolean("move").bindTo { it.move }
+
+    val view_channel = boolean("view_channel").bindTo { it.viewChannel }
+    val manage_channel = boolean("manage_channel").bindTo { it.manageChannel }
+    val manage_permissions = boolean("manage_permissions").bindTo { it.managePermissions }
 }
 
 interface DatabaseVoicePermissionsMember : Entity<DatabaseVoicePermissionsMember>, VoiceChannelMemberOverride {
     companion object : Entity.Factory<DatabaseVoicePermissionsMember>()
 
     override val author: DatabaseUser?
-    override val member: DatabaseUser
+    override val member: DatabaseMember
 
     // override val guild: DatabaseGuild
     override val channel: DatabaseGuildChannel
@@ -283,7 +432,7 @@ interface DatabaseVoicePermissionsMember : Entity<DatabaseVoicePermissionsMember
 }
 
 object DatabaseVoicePermissionsMembers : Table<DatabaseVoicePermissionsMember>("voice_permissions_member") {
-    val member = int("member").references(DatabaseUsers) { it.member }
+    val member = int("member").references(DatabaseMembers) { it.member }
     val author = int("author").references(DatabaseUsers) { it.author }
 
     // val guild = int("guild").references(DatabaseGuilds) { it.guild }
@@ -317,15 +466,15 @@ interface DatabaseTextPermissionsMember : Entity<DatabaseTextPermissionsMember>,
     companion object : Entity.Factory<DatabaseTextPermissionsMember>()
 
     override val author: DatabaseUser?
-    override val member: DatabaseUser
+    override val member: DatabaseMember
 
     // override val guild: DatabaseGuild
     override val channel: DatabaseGuildChannel
     override val permissions: DatabaseTextPermission
 }
 
-object DatabaseTextPermissionsMembers : Table<DatabaseTextPermissionsMember>("text_permissions_member") {
-    val member = int("member").references(DatabaseUsers) { it.member }
+object DatabaseTextPermissionsMembers : Table<DatabaseTextPermissionsMember>("text_permissions_members") {
+    val member = int("member").references(DatabaseMembers) { it.member }
     val author = int("author").references(DatabaseUsers) { it.author }
     val channel = int("channel").references(DatabaseGuildChannels) { it.channel }
     val permissions = int("permissions").references(DatabaseTextPermissions) { it.permissions }
